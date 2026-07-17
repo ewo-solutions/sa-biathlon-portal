@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  ATHLETE
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  WAITLISTED
+  CANCELLED
+  ATTENDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// One account per person. Role decides which dashboard they land on;
+// AthleteProfile only exists for Role.ATHLETE accounts.
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  role          Role     @default(ATHLETE)
+  name          String
+  surname       String
+  cellphone     String?
+  province      String?
+  profileImageUrl String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  athleteProfile     AthleteProfile?
+  createdEvents      Event[]             @relation("EventCreatedBy")
+  eventRegistrations EventRegistration[]
+  memberships        Membership[]
+  payments           Payment[]
+
+  @@index([role])
+}
+
+// Athlete-specific fields that don't belong on every User (admins don't need these).
+model AthleteProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateOfBirth DateTime?
+  idNumber   String?
+  club       String?
+  discipline String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  results    Result[]
+}
+
+model Event {
+  id             String   @id @default(cuid())
+  name           String
+  description    String   @db.Text
+  location       String?
+  eventDate      DateTime
+  registrationFee Decimal? @db.Decimal(10, 2)
+  capacity       Int?
+  imageUrl       String?
+  createdById    String
+  createdBy      User     @relation("EventCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  registrations  EventRegistration[]
+  results        Result[]
+
+  @@index([eventDate])
+}
+
+// Sign-up record for the "sign up" action on Upcoming Events cards.
+model EventRegistration {
+  id        String              @id @default(cuid())
+  eventId   String
+  event     Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    RegistrationStatus  @default(REGISTERED)
+  createdAt DateTime            @default(now())
+
+  payment   Payment?
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+// Results archive, browsable by year on the athlete Results page.
+model Result {
+  id               String          @id @default(cuid())
+  eventId          String
+  event            Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  athleteProfileId String
+  athleteProfile   AthleteProfile  @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  season           Int
+  position         Int?
+  timeSeconds      Int?
+  documentUrl      String?
+  createdAt        DateTime        @default(now())
+
+  @@index([season])
+  @@index([athleteProfileId])
+}
+
+// Yearly season affiliation, e.g. "2024/2025 Season Affiliation" at R300/y.
+model Membership {
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seasonLabel String
+  feeAmount  Decimal           @db.Decimal(10, 2)
+  status     MembershipStatus  @default(ACTIVE)
+  purchasedAt DateTime
+  expiresAt  DateTime
+  createdAt  DateTime          @default(now())
+
+  payment    Payment?
+
+  @@index([userId])
+}
+
+// Shared by event registrations and membership renewals — one payment can
+// settle either, never both.
+model Payment {
+  id                  String              @id @default(cuid())
+  userId              String
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventRegistrationId String?             @unique
+  eventRegistration   EventRegistration?  @relation(fields: [eventRegistrationId], references: [id], onDelete: SetNull)
+  membershipId        String?             @unique
+  membership          Membership?         @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  amount              Decimal             @db.Decimal(10, 2)
+  status              PaymentStatus       @default(PENDING)
+  provider            String?
+  providerRef         String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([userId])
+}
