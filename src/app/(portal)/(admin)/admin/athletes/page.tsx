@@ -15,8 +15,8 @@ export default async function AdminAthletesPage() {
   return (
     <div>
       <h1 className="tracked-caps mb-6 text-2xl font-black text-white">Athletes Profiles</h1>
-      <Card>
-        <table className="w-full text-left text-sm">
+      <Card className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
             <tr className="tracked-caps border-b border-white/10 text-muted">
               <th className="py-2 pr-4 font-black">Name</th>

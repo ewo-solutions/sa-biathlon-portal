@@ -26,7 +26,7 @@ export default async function AthleteMembershipPage() {
               <p className="text-white/80">Yearly Membership:</p>
               <p className="tracked-caps font-black text-gold">R{membership.feeAmount.toString()}/y</p>
             </div>
-            <div className="flex gap-8">
+            <div className="flex flex-wrap gap-6 sm:gap-8">
               <div>
                 <p className="text-white/80">Purchased:</p>
                 <p className="tracked-caps font-black text-gold">
@@ -48,7 +48,7 @@ export default async function AthleteMembershipPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-4 pt-2">
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:gap-4">
               {membership.status !== "CANCELLED" && (
                 <form
                   action={async () => {
@@ -58,7 +58,7 @@ export default async function AthleteMembershipPage() {
                 >
                   <button
                     type="submit"
-                    className="tracked-caps bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
+                    className="tracked-caps w-full bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light sm:w-auto"
                   >
                     Cancel membership
                   </button>
@@ -72,7 +72,7 @@ export default async function AthleteMembershipPage() {
               >
                 <button
                   type="submit"
-                  className="tracked-caps bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
+                  className="tracked-caps w-full bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light sm:w-auto"
                 >
                   Renew membership
                 </button>

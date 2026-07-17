@@ -38,7 +38,7 @@ export default async function LoginPage({
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-bg px-4">
-      <div className="w-full max-w-md bg-panel p-10 shadow-[0_0_34px_rgba(0,0,0,0.5)]">
+      <div className="w-full max-w-md bg-panel p-6 shadow-[0_0_34px_rgba(0,0,0,0.5)] sm:p-10">
         <div className="mb-6 flex justify-center">
           <Crest className="h-24 w-24" />
         </div>

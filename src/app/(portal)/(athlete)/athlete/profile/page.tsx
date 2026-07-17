@@ -106,7 +106,7 @@ export default async function AthleteProfilePage() {
                     R{membership.feeAmount.toString()}/y
                   </p>
                 </div>
-                <div className="flex gap-8">
+                <div className="flex flex-wrap gap-6 sm:gap-8">
                   <div>
                     <p className="text-white/80">Purchased:</p>
                     <p className="tracked-caps font-black text-gold">

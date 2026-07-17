@@ -22,16 +22,18 @@ export default async function AthleteResultsPage() {
 
   return (
     <div className="bg-panel shadow-[0_0_34px_rgba(0,0,0,0.25)]">
-      <div className="bg-gold px-8 py-8">
-        <h1 className="tracked-caps text-2xl font-black text-panel-alt">Download Results Here</h1>
+      <div className="bg-gold px-5 py-6 sm:px-8 sm:py-8">
+        <h1 className="tracked-caps text-xl font-black text-panel-alt sm:text-2xl">
+          Download Results Here
+        </h1>
       </div>
-      <div className="p-8">
+      <div className="p-5 sm:p-8">
         {seasons.length === 0 && <p className="text-sm text-muted">No results on file yet.</p>}
         <div className="space-y-2">
           {seasons.map((season, i) => (
             <details key={season} className="group" open={i === 0}>
               <summary
-                className={`tracked-caps flex cursor-pointer list-none items-center justify-between px-6 py-5 text-sm font-black text-white ${
+                className={`tracked-caps flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm font-black text-white sm:px-6 sm:py-5 ${
                   i === 0 ? "bg-sage" : "bg-panel-alt"
                 }`}
               >
@@ -39,12 +41,12 @@ export default async function AthleteResultsPage() {
                 <span className="group-open:hidden">+</span>
                 <span className="hidden group-open:inline">−</span>
               </summary>
-              <ul className="space-y-2 px-6 py-4 text-sm text-white/80">
+              <ul className="space-y-2 px-4 py-4 text-sm text-white/80 sm:px-6">
                 {bySeason[season].length === 0 && (
                   <li className="text-muted">No results recorded for this season yet.</li>
                 )}
                 {bySeason[season].map((result) => (
-                  <li key={result.id} className="flex items-center justify-between">
+                  <li key={result.id} className="flex flex-wrap items-center justify-between gap-2">
                     <span>{result.event.name}</span>
                     <span className="flex items-center gap-3">
                       {result.position && <span>#{result.position}</span>}
