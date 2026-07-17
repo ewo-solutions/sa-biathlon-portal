@@ -49,7 +49,7 @@ export async function uploadEventPicture(eventId: string, formData: FormData) {
     throw new Error("Not authorized");
   }
 
-  const file = formData.get("eventPicture") as File | null;
+  const file = formData.get("profilePicture") as File | null;
   if (!file || file.size === 0) return;
 
   const dataUri = await fileToDataUri(file);
