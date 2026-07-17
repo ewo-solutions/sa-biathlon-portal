@@ -1,16 +1,20 @@
-import { Home, CalendarDays, PlusSquare, Users, BarChart3, User } from "lucide-react";
+import { Home, Zap, CalendarDays, User, BarChart3 } from "lucide-react";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { auth, signOut } from "@/lib/auth";
 import { DashboardShell, type NavItem } from "@/components/dashboard-shell";
 
 const navItems: NavItem[] = [
-  { label: "Home", href: "/admin", icon: <Home size={18} /> },
-  { label: "Events", href: "/admin/events", icon: <CalendarDays size={18} /> },
-  { label: "Edit & Create Events", href: "/admin/events/new", icon: <PlusSquare size={18} /> },
-  { label: "Athletes Profiles", href: "/admin/athletes", icon: <Users size={18} /> },
-  { label: "Statistics", href: "/admin/statistics", icon: <BarChart3 size={18} /> },
-  { label: "My Profile", href: "/admin/profile", icon: <User size={18} /> },
+  { label: "Home", href: "/admin", icon: <Home size={20} /> },
+  { label: "Athletes", href: "/admin/athletes", icon: <Zap size={20} /> },
+  { label: "Events", href: "/admin/events", icon: <CalendarDays size={20} /> },
+  { label: "My Profile", href: "/admin/profile", icon: <User size={20} /> },
+  { label: "Statistics", href: "/admin/statistics", icon: <BarChart3 size={20} /> },
 ];
+
+async function logout() {
+  "use server";
+  await signOut({ redirectTo: "/login" });
+}
 
 export default async function AdminLayout({
   children,
@@ -23,7 +27,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <DashboardShell navItems={navItems} userName={session.user.name ?? "Admin"}>
+    <DashboardShell navItems={navItems} userName={session.user.name ?? "Admin"} onLogout={logout}>
       {children}
     </DashboardShell>
   );

@@ -13,34 +13,34 @@ export default async function AdminAthletesPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-ink-950">Athletes Profiles</h1>
+      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">Athletes Profiles</h1>
       <Card>
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-ink-200 text-ink-500">
-              <th className="py-2 pr-4 font-medium">Name</th>
-              <th className="py-2 pr-4 font-medium">Email</th>
-              <th className="py-2 pr-4 font-medium">Province</th>
-              <th className="py-2 pr-4 font-medium">Club</th>
-              <th className="py-2 font-medium">Membership</th>
+            <tr className="tracked-caps border-b border-white/10 text-muted">
+              <th className="py-2 pr-4 font-black">Name</th>
+              <th className="py-2 pr-4 font-black">Email</th>
+              <th className="py-2 pr-4 font-black">Province</th>
+              <th className="py-2 pr-4 font-black">Club</th>
+              <th className="py-2 font-black">Membership</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-ink-100">
+          <tbody className="divide-y divide-white/5">
             {athletes.map((athlete) => (
               <tr key={athlete.id}>
-                <td className="py-3 pr-4 font-medium text-ink-800">
+                <td className="py-3 pr-4 font-bold text-white">
                   {athlete.name} {athlete.surname}
                 </td>
-                <td className="py-3 pr-4 text-ink-600">{athlete.email}</td>
-                <td className="py-3 pr-4 text-ink-600">{athlete.province ?? "—"}</td>
-                <td className="py-3 pr-4 text-ink-600">{athlete.athleteProfile?.club ?? "—"}</td>
-                <td className="py-3 text-ink-600">
+                <td className="py-3 pr-4 text-white/80">{athlete.email}</td>
+                <td className="py-3 pr-4 text-white/80">{athlete.province ?? "—"}</td>
+                <td className="py-3 pr-4 text-white/80">{athlete.athleteProfile?.club ?? "—"}</td>
+                <td className="py-3 text-white/80">
                   {athlete.memberships[0] ? (
-                    <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+                    <span className="bg-sage px-3 py-1 text-xs font-bold text-white">
                       {athlete.memberships[0].seasonLabel}
                     </span>
                   ) : (
-                    <span className="rounded-full bg-ink-100 px-3 py-1 text-xs font-medium text-ink-500">
+                    <span className="bg-panel-alt px-3 py-1 text-xs font-bold text-muted">
                       No active membership
                     </span>
                   )}
@@ -49,7 +49,7 @@ export default async function AdminAthletesPage() {
             ))}
             {athletes.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-6 text-center text-ink-500">
+                <td colSpan={5} className="py-6 text-center text-muted">
                   No athletes registered yet.
                 </td>
               </tr>

@@ -3,8 +3,8 @@ import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { updateProfile } from "./actions";
 
-const inputClass =
-  "w-full rounded-xl border border-ink-200 px-4 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100";
+const inputClass = "w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none";
+const labelClass = "mb-1 block text-sm text-white";
 
 export default async function AthleteProfilePage() {
   const session = await auth();
@@ -30,16 +30,16 @@ export default async function AthleteProfilePage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-ink-950">My Profile</h1>
+      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">My Profile</h1>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.7fr]">
         <div className="space-y-6">
           <Card title="Upcoming events">
             <ul className="space-y-3 text-sm">
-              {upcoming.length === 0 && <li className="text-ink-500">No upcoming sign-ups.</li>}
+              {upcoming.length === 0 && <li className="text-muted">No upcoming sign-ups.</li>}
               {upcoming.map((r) => (
                 <li key={r.id} className="flex flex-col">
-                  <span className="font-medium text-ink-800">{r.event.name}</span>
-                  <span className="text-xs text-ink-500">
+                  <span className="font-bold uppercase text-white">{r.event.name}</span>
+                  <span className="text-xs text-muted">
                     {r.event.eventDate.toLocaleDateString("en-ZA", {
                       day: "numeric",
                       month: "long",
@@ -53,11 +53,11 @@ export default async function AthleteProfilePage() {
 
           <Card title="Past events">
             <ul className="space-y-3 text-sm">
-              {past.length === 0 && <li className="text-ink-500">No past events yet.</li>}
+              {past.length === 0 && <li className="text-muted">No past events yet.</li>}
               {past.map((r) => (
                 <li key={r.id} className="flex flex-col">
-                  <span className="font-medium text-ink-800">{r.event.name}</span>
-                  <span className="text-xs text-ink-500">
+                  <span className="font-bold uppercase text-white">{r.event.name}</span>
+                  <span className="text-xs text-muted">
                     {r.event.eventDate.toLocaleDateString("en-ZA", {
                       day: "numeric",
                       month: "long",
@@ -74,17 +74,15 @@ export default async function AthleteProfilePage() {
           <Card title="Personal information">
             <form action={updateProfile} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-ink-700">Name</label>
+                <label className={labelClass}>Name</label>
                 <input name="name" defaultValue={user.name} className={inputClass} required />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-ink-700">Surname</label>
+                <label className={labelClass}>Surname</label>
                 <input name="surname" defaultValue={user.surname} className={inputClass} required />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-ink-700">
-                  Cellphone number
-                </label>
+                <label className={labelClass}>Cellphone number</label>
                 <input
                   name="cellphone"
                   defaultValue={user.cellphone ?? ""}
@@ -92,7 +90,7 @@ export default async function AthleteProfilePage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-ink-700">Email</label>
+                <label className={labelClass}>Email</label>
                 <input
                   name="email"
                   type="email"
@@ -102,12 +100,12 @@ export default async function AthleteProfilePage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-ink-700">Province</label>
+                <label className={labelClass}>Province</label>
                 <input name="province" defaultValue={user.province ?? ""} className={inputClass} />
               </div>
               <button
                 type="submit"
-                className="rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700"
+                className="tracked-caps bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
               >
                 Save changes
               </button>
@@ -118,19 +116,19 @@ export default async function AthleteProfilePage() {
             {membership ? (
               <div className="space-y-4 text-sm">
                 <div>
-                  <p className="text-ink-500">Current Membership:</p>
-                  <p className="font-medium text-ink-800">{membership.seasonLabel}</p>
+                  <p className="text-white/80">Current Membership:</p>
+                  <p className="tracked-caps font-black text-gold">{membership.seasonLabel}</p>
                 </div>
                 <div>
-                  <p className="text-ink-500">Yearly Membership:</p>
-                  <p className="font-medium text-ink-800">
+                  <p className="text-white/80">Yearly Membership:</p>
+                  <p className="tracked-caps font-black text-gold">
                     R{membership.feeAmount.toString()}/y
                   </p>
                 </div>
                 <div className="flex gap-8">
                   <div>
-                    <p className="text-ink-500">Purchased:</p>
-                    <p className="font-medium text-ink-800">
+                    <p className="text-white/80">Purchased:</p>
+                    <p className="tracked-caps font-black text-gold">
                       {membership.purchasedAt.toLocaleDateString("en-ZA", {
                         day: "numeric",
                         month: "long",
@@ -139,8 +137,8 @@ export default async function AthleteProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-ink-500">Expiration Date:</p>
-                    <p className="font-medium text-ink-800">
+                    <p className="text-white/80">Expiration Date:</p>
+                    <p className="tracked-caps font-black text-gold">
                       {membership.expiresAt.toLocaleDateString("en-ZA", {
                         day: "numeric",
                         month: "long",
@@ -151,13 +149,13 @@ export default async function AthleteProfilePage() {
                 </div>
                 <a
                   href="/athlete/membership"
-                  className="inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-700"
+                  className="tracked-caps inline-block bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
                 >
                   Manage membership
                 </a>
               </div>
             ) : (
-              <p className="text-sm text-ink-500">No active membership on file.</p>
+              <p className="text-sm text-muted">No active membership on file.</p>
             )}
           </Card>
         </div>

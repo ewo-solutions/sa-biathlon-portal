@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
+import { Crest } from "@/components/crest";
 
 async function loginAction(formData: FormData) {
   "use server";
@@ -36,21 +37,25 @@ export default async function LoginPage({
   const params = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ink-50 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-ink-200">
-        <h1 className="text-2xl font-semibold text-ink-950">SA Biathlon Portal</h1>
-        <p className="mt-1 text-sm text-ink-500">Sign in to your athlete or admin account.</p>
+    <main className="flex min-h-screen items-center justify-center bg-bg px-4">
+      <div className="w-full max-w-md bg-panel p-10 shadow-[0_0_34px_rgba(0,0,0,0.5)]">
+        <div className="mb-6 flex justify-center">
+          <Crest className="h-24 w-24" />
+        </div>
+        <p className="tracked-caps mb-6 text-center text-sm font-black text-muted">
+          Sign in to your account
+        </p>
 
         {params.error && (
-          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="mb-4 bg-red-950/60 px-3 py-2 text-sm text-red-300">
             Invalid email or password.
           </p>
         )}
 
-        <form action={loginAction} className="mt-6 space-y-4">
+        <form action={loginAction} className="space-y-4">
           <input type="hidden" name="callbackUrl" value={params.callbackUrl ?? "/"} />
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-ink-700">
+            <label htmlFor="email" className="mb-1 block text-sm text-white">
               Email
             </label>
             <input
@@ -58,12 +63,12 @@ export default async function LoginPage({
               name="email"
               type="email"
               required
-              className="w-full rounded-xl border border-ink-200 px-4 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none"
               placeholder="you@sabiathlon.co.za"
             />
           </div>
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-ink-700">
+            <label htmlFor="password" className="mb-1 block text-sm text-white">
               Password
             </label>
             <input
@@ -71,13 +76,13 @@ export default async function LoginPage({
               name="password"
               type="password"
               required
-              className="w-full rounded-xl border border-ink-200 px-4 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none"
               placeholder="••••••••"
             />
           </div>
           <button
             type="submit"
-            className="w-full rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700"
+            className="tracked-caps w-full bg-gold px-4 py-3.5 text-sm font-black text-panel-alt transition hover:bg-gold-light"
           >
             Log in
           </button>

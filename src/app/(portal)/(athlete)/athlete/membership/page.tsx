@@ -14,22 +14,22 @@ export default async function AthleteMembershipPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-ink-950">Membership</h1>
+      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">Membership</h1>
       <Card title="Current membership">
         {membership ? (
           <div className="space-y-4 text-sm">
             <div>
-              <p className="text-ink-500">Current Membership:</p>
-              <p className="font-medium text-ink-800">{membership.seasonLabel}</p>
+              <p className="text-white/80">Current Membership:</p>
+              <p className="tracked-caps font-black text-gold">{membership.seasonLabel}</p>
             </div>
             <div>
-              <p className="text-ink-500">Yearly Membership:</p>
-              <p className="font-medium text-ink-800">R{membership.feeAmount.toString()}/y</p>
+              <p className="text-white/80">Yearly Membership:</p>
+              <p className="tracked-caps font-black text-gold">R{membership.feeAmount.toString()}/y</p>
             </div>
             <div className="flex gap-8">
               <div>
-                <p className="text-ink-500">Purchased:</p>
-                <p className="font-medium text-ink-800">
+                <p className="text-white/80">Purchased:</p>
+                <p className="tracked-caps font-black text-gold">
                   {membership.purchasedAt.toLocaleDateString("en-ZA", {
                     day: "numeric",
                     month: "long",
@@ -38,8 +38,8 @@ export default async function AthleteMembershipPage() {
                 </p>
               </div>
               <div>
-                <p className="text-ink-500">Expiration Date:</p>
-                <p className="font-medium text-ink-800">
+                <p className="text-white/80">Expiration Date:</p>
+                <p className="tracked-caps font-black text-gold">
                   {membership.expiresAt.toLocaleDateString("en-ZA", {
                     day: "numeric",
                     month: "long",
@@ -58,7 +58,7 @@ export default async function AthleteMembershipPage() {
                 >
                   <button
                     type="submit"
-                    className="rounded-xl border border-ink-200 px-6 py-3 text-sm font-medium text-ink-700 transition hover:bg-ink-50"
+                    className="tracked-caps bg-panel-alt px-6 py-3 text-sm font-black text-white transition hover:bg-panel-alt/70"
                   >
                     Cancel membership
                   </button>
@@ -72,7 +72,7 @@ export default async function AthleteMembershipPage() {
               >
                 <button
                   type="submit"
-                  className="rounded-xl bg-brand-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-700"
+                  className="tracked-caps bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
                 >
                   Renew membership
                 </button>
@@ -80,7 +80,7 @@ export default async function AthleteMembershipPage() {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-ink-500">No membership on file yet.</p>
+          <p className="text-sm text-muted">No membership on file yet.</p>
         )}
       </Card>
     </div>

@@ -21,7 +21,7 @@ export default async function AdminStatisticsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-ink-950">Statistics</h1>
+      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">Statistics</h1>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
         <Card title="Sign-ups per event">
           <RegistrationsChart data={chartData} />
@@ -30,12 +30,12 @@ export default async function AdminStatisticsPage() {
           <ul className="space-y-3 text-sm">
             {membershipsByStatus.map((row) => (
               <li key={row.status} className="flex items-center justify-between">
-                <span className="text-ink-600">{row.status}</span>
-                <span className="font-semibold text-ink-950">{row._count._all}</span>
+                <span className="tracked-caps text-white/80">{row.status}</span>
+                <span className="font-black text-gold">{row._count._all}</span>
               </li>
             ))}
             {membershipsByStatus.length === 0 && (
-              <li className="text-ink-500">No membership data yet.</li>
+              <li className="text-muted">No membership data yet.</li>
             )}
           </ul>
         </Card>

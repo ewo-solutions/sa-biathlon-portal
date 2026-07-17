@@ -23,20 +23,20 @@ export default async function AthleteResultsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-ink-950">Results</h1>
+      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">Results</h1>
       <Card>
         {seasons.length === 0 && (
-          <p className="text-sm text-ink-500">No results on file yet.</p>
+          <p className="text-sm text-muted">No results on file yet.</p>
         )}
-        <div className="divide-y divide-ink-200">
+        <div className="divide-y divide-white/10">
           {seasons.map((season) => (
             <details key={season} className="group py-4 first:pt-0 last:pb-0">
-              <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-ink-800">
+              <summary className="tracked-caps flex cursor-pointer list-none items-center justify-between text-sm font-black text-white">
                 {season} Results
-                <span className="text-ink-400 group-open:hidden">+</span>
-                <span className="hidden text-ink-400 group-open:inline">−</span>
+                <span className="text-gold group-open:hidden">+</span>
+                <span className="hidden text-gold group-open:inline">−</span>
               </summary>
-              <ul className="mt-3 space-y-2 pl-1 text-sm text-ink-600">
+              <ul className="mt-3 space-y-2 pl-1 text-sm text-white/80">
                 {bySeason[season].map((result) => (
                   <li key={result.id} className="flex items-center justify-between">
                     <span>{result.event.name}</span>
@@ -45,7 +45,7 @@ export default async function AthleteResultsPage() {
                       {result.documentUrl && (
                         <a
                           href={result.documentUrl}
-                          className="text-brand-600 hover:underline"
+                          className="text-gold hover:underline"
                         >
                           Download
                         </a>

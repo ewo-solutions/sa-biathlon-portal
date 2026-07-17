@@ -1,16 +1,21 @@
 import { Home, CalendarDays, ClipboardList, User, Tag, Headphones } from "lucide-react";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { auth, signOut } from "@/lib/auth";
 import { DashboardShell, type NavItem } from "@/components/dashboard-shell";
 
 const navItems: NavItem[] = [
-  { label: "Home", href: "/athlete", icon: <Home size={18} /> },
-  { label: "Upcoming Events", href: "/athlete/events", icon: <CalendarDays size={18} /> },
-  { label: "Results", href: "/athlete/results", icon: <ClipboardList size={18} /> },
-  { label: "My Profile", href: "/athlete/profile", icon: <User size={18} /> },
-  { label: "Membership", href: "/athlete/membership", icon: <Tag size={18} /> },
-  { label: "Support", href: "/athlete/support", icon: <Headphones size={18} /> },
+  { label: "Home", href: "/athlete", icon: <Home size={20} /> },
+  { label: "Upcoming Events", href: "/athlete/events", icon: <CalendarDays size={20} /> },
+  { label: "Results", href: "/athlete/results", icon: <ClipboardList size={20} /> },
+  { label: "My Profile", href: "/athlete/profile", icon: <User size={20} /> },
+  { label: "Membership", href: "/athlete/membership", icon: <Tag size={20} /> },
+  { label: "Support", href: "/athlete/support", icon: <Headphones size={20} /> },
 ];
+
+async function logout() {
+  "use server";
+  await signOut({ redirectTo: "/login" });
+}
 
 export default async function AthleteLayout({
   children,
@@ -23,7 +28,7 @@ export default async function AthleteLayout({
   }
 
   return (
-    <DashboardShell navItems={navItems} userName={session.user.name ?? "Athlete"}>
+    <DashboardShell navItems={navItems} userName={session.user.name ?? "Athlete"} onLogout={logout}>
       {children}
     </DashboardShell>
   );

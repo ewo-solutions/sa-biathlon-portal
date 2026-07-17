@@ -2,8 +2,8 @@ import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { saveEvent } from "./actions";
 
-const inputClass =
-  "w-full rounded-xl border border-ink-200 px-4 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100";
+const inputClass = "w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none";
+const labelClass = "mb-1 block text-sm text-white";
 
 function toDateInputValue(date: Date) {
   return date.toISOString().slice(0, 16);
@@ -19,18 +19,18 @@ export default async function EditCreateEventPage({
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-ink-950">
+      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">
         {event ? "Edit Event" : "Create Event"}
       </h1>
       <Card className="max-w-2xl">
         <form action={saveEvent} className="space-y-4">
           {event && <input type="hidden" name="eventId" value={event.id} />}
           <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Event name</label>
+            <label className={labelClass}>Event name</label>
             <input name="name" defaultValue={event?.name} required className={inputClass} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Description</label>
+            <label className={labelClass}>Description</label>
             <textarea
               name="description"
               defaultValue={event?.description}
@@ -40,11 +40,11 @@ export default async function EditCreateEventPage({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Location</label>
+            <label className={labelClass}>Location</label>
             <input name="location" defaultValue={event?.location ?? ""} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Date &amp; time</label>
+            <label className={labelClass}>Date &amp; time</label>
             <input
               type="datetime-local"
               name="eventDate"
@@ -55,9 +55,7 @@ export default async function EditCreateEventPage({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-ink-700">
-                Registration fee (R)
-              </label>
+              <label className={labelClass}>Registration fee (R)</label>
               <input
                 name="registrationFee"
                 type="number"
@@ -67,7 +65,7 @@ export default async function EditCreateEventPage({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-ink-700">Capacity</label>
+              <label className={labelClass}>Capacity</label>
               <input
                 name="capacity"
                 type="number"
@@ -78,7 +76,7 @@ export default async function EditCreateEventPage({
           </div>
           <button
             type="submit"
-            className="rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700"
+            className="tracked-caps bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
           >
             {event ? "Save changes" : "Create event"}
           </button>

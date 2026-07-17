@@ -8,8 +8,10 @@ export function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`rounded-2xl bg-white p-6 shadow-sm ring-1 ring-ink-200 ${className}`}>
-      {title && <h2 className="mb-4 text-lg font-semibold text-ink-950">{title}</h2>}
+    <div className={`bg-panel p-7 shadow-[0_0_34px_rgba(0,0,0,0.25)] ${className}`}>
+      {title && (
+        <h2 className="tracked-caps mb-5 text-lg font-black text-white">{title}</h2>
+      )}
       {children}
     </div>
   );
