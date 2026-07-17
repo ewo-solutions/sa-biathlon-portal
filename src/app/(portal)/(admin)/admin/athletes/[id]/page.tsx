@@ -1,25 +1,32 @@
-import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { EventThumbList } from "@/components/ui/event-thumb-list";
 import { ProfilePictureForm } from "@/components/ui/profile-picture-form";
-import { updateProfile, uploadProfilePicture } from "./actions";
+import { updateAthlete, uploadAthletePicture } from "./actions";
 
 const inputClass = "w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none";
 const labelClass = "mb-1 block text-sm text-white";
 
-export default async function AthleteProfilePage() {
-  const session = await auth();
-  const userId = session!.user.id;
+export default async function AdminAthleteDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
 
-  const [user, membership, registrations] = await Promise.all([
-    prisma.user.findUniqueOrThrow({ where: { id: userId } }),
+  const athlete = await prisma.user.findUnique({
+    where: { id, role: "ATHLETE" },
+  });
+  if (!athlete) notFound();
+
+  const [membership, registrations] = await Promise.all([
     prisma.membership.findFirst({
-      where: { userId, status: "ACTIVE" },
+      where: { userId: id, status: "ACTIVE" },
       orderBy: { expiresAt: "desc" },
     }),
     prisma.eventRegistration.findMany({
-      where: { userId },
+      where: { userId: id },
       include: { event: true },
       orderBy: { event: { eventDate: "desc" } },
       take: 6,
@@ -30,13 +37,18 @@ export default async function AthleteProfilePage() {
   const upcoming = registrations.filter((r) => r.event.eventDate >= now);
   const past = registrations.filter((r) => r.event.eventDate < now);
 
+  const boundUpdate = updateAthlete.bind(null, id);
+  const boundUpload = uploadAthletePicture.bind(null, id);
+
   return (
     <div>
-      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">My Profile</h1>
+      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">
+        {athlete.name} {athlete.surname}
+      </h1>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.7fr]">
         <div className="space-y-6">
           <Card title="Profile Picture">
-            <ProfilePictureForm action={uploadProfilePicture} currentImageUrl={user.profileImageUrl} />
+            <ProfilePictureForm action={boundUpload} currentImageUrl={athlete.profileImageUrl} />
           </Card>
 
           <Card title="Upcoming events">
@@ -53,20 +65,25 @@ export default async function AthleteProfilePage() {
 
         <div className="space-y-6">
           <Card title="Personal information">
-            <form action={updateProfile} className="space-y-4">
+            <form action={boundUpdate} className="space-y-4">
               <div>
                 <label className={labelClass}>Name</label>
-                <input name="name" defaultValue={user.name} className={inputClass} required />
+                <input name="name" defaultValue={athlete.name} className={inputClass} required />
               </div>
               <div>
                 <label className={labelClass}>Surname</label>
-                <input name="surname" defaultValue={user.surname} className={inputClass} required />
+                <input
+                  name="surname"
+                  defaultValue={athlete.surname}
+                  className={inputClass}
+                  required
+                />
               </div>
               <div>
                 <label className={labelClass}>Cellphone number</label>
                 <input
                   name="cellphone"
-                  defaultValue={user.cellphone ?? ""}
+                  defaultValue={athlete.cellphone ?? ""}
                   className={inputClass}
                 />
               </div>
@@ -75,18 +92,22 @@ export default async function AthleteProfilePage() {
                 <input
                   name="email"
                   type="email"
-                  defaultValue={user.email}
+                  defaultValue={athlete.email}
                   className={inputClass}
                   required
                 />
               </div>
               <div>
                 <label className={labelClass}>Province</label>
-                <input name="province" defaultValue={user.province ?? ""} className={inputClass} />
+                <input
+                  name="province"
+                  defaultValue={athlete.province ?? ""}
+                  className={inputClass}
+                />
               </div>
               <button
                 type="submit"
-                className="tracked-caps bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
+                className="tracked-caps bg-sage px-6 py-3 text-sm font-black text-white transition hover:bg-sage-light"
               >
                 Save changes
               </button>
@@ -128,17 +149,18 @@ export default async function AthleteProfilePage() {
                     </p>
                   </div>
                 </div>
-                <a
-                  href="/athlete/membership"
-                  className="tracked-caps inline-block bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
-                >
-                  Manage membership
-                </a>
               </div>
             ) : (
               <p className="text-sm text-muted">No active membership on file.</p>
             )}
           </Card>
+
+          <a
+            href={`mailto:${athlete.email}`}
+            className="tracked-caps block bg-gold px-6 py-4 text-center text-sm font-black text-panel-alt transition hover:bg-gold-light"
+          >
+            Contact Athlete
+          </a>
         </div>
       </div>
     </div>

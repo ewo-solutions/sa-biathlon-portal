@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 
@@ -27,11 +28,17 @@ export default async function AdminAthletesPage() {
           </thead>
           <tbody className="divide-y divide-white/5">
             {athletes.map((athlete) => (
-              <tr key={athlete.id}>
+              <tr key={athlete.id} className="cursor-pointer hover:bg-white/5">
                 <td className="py-3 pr-4 font-bold text-white">
-                  {athlete.name} {athlete.surname}
+                  <Link href={`/admin/athletes/${athlete.id}`} className="block">
+                    {athlete.name} {athlete.surname}
+                  </Link>
                 </td>
-                <td className="py-3 pr-4 text-white/80">{athlete.email}</td>
+                <td className="py-3 pr-4 text-white/80">
+                  <Link href={`/admin/athletes/${athlete.id}`} className="block">
+                    {athlete.email}
+                  </Link>
+                </td>
                 <td className="py-3 pr-4 text-white/80">{athlete.province ?? "—"}</td>
                 <td className="py-3 pr-4 text-white/80">{athlete.athleteProfile?.club ?? "—"}</td>
                 <td className="py-3 text-white/80">

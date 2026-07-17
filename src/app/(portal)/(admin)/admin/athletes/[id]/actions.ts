@@ -5,9 +5,15 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { fileToDataUri } from "@/lib/uploads";
 
-export async function updateProfile(formData: FormData) {
+async function requireAdmin() {
   const session = await auth();
-  if (!session?.user) throw new Error("Not authorized");
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Not authorized");
+  }
+}
+
+export async function updateAthlete(athleteId: string, formData: FormData) {
+  await requireAdmin();
 
   const name = formData.get("name") as string;
   const surname = formData.get("surname") as string;
@@ -16,16 +22,15 @@ export async function updateProfile(formData: FormData) {
   const province = formData.get("province") as string;
 
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: athleteId, role: "ATHLETE" },
     data: { name, surname, cellphone, email, province },
   });
 
-  revalidatePath("/athlete/profile");
+  revalidatePath(`/admin/athletes/${athleteId}`);
 }
 
-export async function uploadProfilePicture(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Not authorized");
+export async function uploadAthletePicture(athleteId: string, formData: FormData) {
+  await requireAdmin();
 
   const file = formData.get("profilePicture") as File | null;
   if (!file || file.size === 0) return;
@@ -33,9 +38,9 @@ export async function uploadProfilePicture(formData: FormData) {
   const dataUri = await fileToDataUri(file);
 
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: athleteId, role: "ATHLETE" },
     data: { profileImageUrl: dataUri },
   });
 
-  revalidatePath("/athlete/profile");
+  revalidatePath(`/admin/athletes/${athleteId}`);
 }
