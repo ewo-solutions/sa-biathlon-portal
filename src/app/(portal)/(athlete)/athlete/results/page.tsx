@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { Card } from "@/components/ui/card";
 
 export default async function AthleteResultsPage() {
   const session = await auth();
@@ -22,31 +21,35 @@ export default async function AthleteResultsPage() {
     .sort((a, b) => b - a);
 
   return (
-    <div>
-      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">Results</h1>
-      <Card>
-        {seasons.length === 0 && (
-          <p className="text-sm text-muted">No results on file yet.</p>
-        )}
-        <div className="divide-y divide-white/10">
-          {seasons.map((season) => (
-            <details key={season} className="group py-4 first:pt-0 last:pb-0">
-              <summary className="tracked-caps flex cursor-pointer list-none items-center justify-between text-sm font-black text-white">
+    <div className="bg-panel shadow-[0_0_34px_rgba(0,0,0,0.25)]">
+      <div className="bg-gold px-8 py-8">
+        <h1 className="tracked-caps text-2xl font-black text-panel-alt">Download Results Here</h1>
+      </div>
+      <div className="p-8">
+        {seasons.length === 0 && <p className="text-sm text-muted">No results on file yet.</p>}
+        <div className="space-y-2">
+          {seasons.map((season, i) => (
+            <details key={season} className="group" open={i === 0}>
+              <summary
+                className={`tracked-caps flex cursor-pointer list-none items-center justify-between px-6 py-5 text-sm font-black text-white ${
+                  i === 0 ? "bg-sage" : "bg-panel-alt"
+                }`}
+              >
                 {season} Results
-                <span className="text-gold group-open:hidden">+</span>
-                <span className="hidden text-gold group-open:inline">−</span>
+                <span className="group-open:hidden">+</span>
+                <span className="hidden group-open:inline">−</span>
               </summary>
-              <ul className="mt-3 space-y-2 pl-1 text-sm text-white/80">
+              <ul className="space-y-2 px-6 py-4 text-sm text-white/80">
+                {bySeason[season].length === 0 && (
+                  <li className="text-muted">No results recorded for this season yet.</li>
+                )}
                 {bySeason[season].map((result) => (
                   <li key={result.id} className="flex items-center justify-between">
                     <span>{result.event.name}</span>
                     <span className="flex items-center gap-3">
                       {result.position && <span>#{result.position}</span>}
                       {result.documentUrl && (
-                        <a
-                          href={result.documentUrl}
-                          className="text-gold hover:underline"
-                        >
+                        <a href={result.documentUrl} className="text-gold hover:underline">
                           Download
                         </a>
                       )}
@@ -57,7 +60,7 @@ export default async function AthleteResultsPage() {
             </details>
           ))}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -58,7 +58,7 @@ export default async function AthleteMembershipPage() {
                 >
                   <button
                     type="submit"
-                    className="tracked-caps bg-panel-alt px-6 py-3 text-sm font-black text-white transition hover:bg-panel-alt/70"
+                    className="tracked-caps bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
                   >
                     Cancel membership
                   </button>

@@ -76,6 +76,8 @@ model Event {
   name           String
   description    String   @db.Text
   location       String?
+  swimmingLocation String?
+  registrationInfo String?
   eventDate      DateTime
   registrationFee Decimal? @db.Decimal(10, 2)
   capacity       Int?
