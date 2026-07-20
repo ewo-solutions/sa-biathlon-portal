@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { ProfilePictureForm } from "@/components/ui/profile-picture-form";
@@ -20,9 +21,27 @@ export default async function EditCreateEventPage({
 
   return (
     <div>
-      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">
-        {event ? "Edit Event" : "Create Event"}
-      </h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="tracked-caps text-2xl font-black text-white">
+          {event ? "Edit Event" : "Create Event"}
+        </h1>
+        {event && (
+          <div className="flex gap-3">
+            <Link
+              href={`/admin/events/scores?eventId=${event.id}&discipline=RUNNING`}
+              className="tracked-caps bg-panel-alt px-4 py-2.5 text-xs font-black text-white transition hover:bg-sage/60"
+            >
+              Enter Run Times
+            </Link>
+            <Link
+              href={`/admin/events/scores?eventId=${event.id}&discipline=SWIMMING`}
+              className="tracked-caps bg-panel-alt px-4 py-2.5 text-xs font-black text-white transition hover:bg-sage/60"
+            >
+              Enter Swim Times
+            </Link>
+          </div>
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.7fr]">
         <Card title="Event Picture">
           {event ? (
