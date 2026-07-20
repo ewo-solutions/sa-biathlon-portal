@@ -17,6 +17,7 @@ export default async function AdminAthleteDetailPage({
 
   const athlete = await prisma.user.findUnique({
     where: { id, role: "ATHLETE" },
+    include: { athleteProfile: true },
   });
   if (!athlete) notFound();
 
@@ -42,9 +43,16 @@ export default async function AdminAthleteDetailPage({
 
   return (
     <div>
-      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">
-        {athlete.name} {athlete.surname}
-      </h1>
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <h1 className="tracked-caps text-2xl font-black text-white">
+          {athlete.name} {athlete.surname}
+        </h1>
+        {athlete.athleteProfile?.athleteNumber && (
+          <span className="tracked-caps bg-gold px-3 py-1 text-xs font-black text-panel-alt">
+            SA No {athlete.athleteProfile.athleteNumber}
+          </span>
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.7fr]">
         <div className="space-y-6">
           <Card title="Profile Picture">
@@ -66,6 +74,15 @@ export default async function AdminAthleteDetailPage({
         <div className="space-y-6">
           <Card title="Personal information">
             <form action={boundUpdate} className="space-y-4">
+              <div>
+                <label className={labelClass}>Athlete number (SA No)</label>
+                <input
+                  name="athleteNumber"
+                  defaultValue={athlete.athleteProfile?.athleteNumber ?? ""}
+                  placeholder="e.g. WC0007"
+                  className={inputClass}
+                />
+              </div>
               <div>
                 <label className={labelClass}>Name</label>
                 <input name="name" defaultValue={athlete.name} className={inputClass} required />

@@ -13,7 +13,7 @@ export default async function AthleteProfilePage() {
   const userId = session!.user.id;
 
   const [user, membership, registrations] = await Promise.all([
-    prisma.user.findUniqueOrThrow({ where: { id: userId } }),
+    prisma.user.findUniqueOrThrow({ where: { id: userId }, include: { athleteProfile: true } }),
     prisma.membership.findFirst({
       where: { userId, status: "ACTIVE" },
       orderBy: { expiresAt: "desc" },
@@ -32,7 +32,14 @@ export default async function AthleteProfilePage() {
 
   return (
     <div>
-      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">My Profile</h1>
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <h1 className="tracked-caps text-2xl font-black text-white">My Profile</h1>
+        {user.athleteProfile?.athleteNumber && (
+          <span className="tracked-caps bg-gold px-3 py-1 text-xs font-black text-panel-alt">
+            SA No {user.athleteProfile.athleteNumber}
+          </span>
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.7fr]">
         <div className="space-y-6">
           <Card title="Profile Picture">

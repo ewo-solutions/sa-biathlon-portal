@@ -19,6 +19,7 @@ export default async function AdminAthletesPage() {
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
             <tr className="tracked-caps border-b border-white/10 text-muted">
+              <th className="py-2 pr-4 font-black">SA No</th>
               <th className="py-2 pr-4 font-black">Name</th>
               <th className="py-2 pr-4 font-black">Email</th>
               <th className="py-2 pr-4 font-black">Province</th>
@@ -29,6 +30,11 @@ export default async function AdminAthletesPage() {
           <tbody className="divide-y divide-white/5">
             {athletes.map((athlete) => (
               <tr key={athlete.id} className="cursor-pointer hover:bg-white/5">
+                <td className="py-3 pr-4 text-white/80">
+                  <Link href={`/admin/athletes/${athlete.id}`} className="block">
+                    {athlete.athleteProfile?.athleteNumber ?? "—"}
+                  </Link>
+                </td>
                 <td className="py-3 pr-4 font-bold text-white">
                   <Link href={`/admin/athletes/${athlete.id}`} className="block">
                     {athlete.name} {athlete.surname}
@@ -56,7 +62,7 @@ export default async function AdminAthletesPage() {
             ))}
             {athletes.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-6 text-center text-muted">
+                <td colSpan={6} className="py-6 text-center text-muted">
                   No athletes registered yet.
                 </td>
               </tr>

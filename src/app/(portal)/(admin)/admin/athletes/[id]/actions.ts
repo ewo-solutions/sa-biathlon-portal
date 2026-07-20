@@ -20,10 +20,23 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
   const cellphone = formData.get("cellphone") as string;
   const email = formData.get("email") as string;
   const province = formData.get("province") as string;
+  const athleteNumber = (formData.get("athleteNumber") as string)?.trim();
 
   await prisma.user.update({
     where: { id: athleteId, role: "ATHLETE" },
-    data: { name, surname, cellphone, email, province },
+    data: {
+      name,
+      surname,
+      cellphone,
+      email,
+      province,
+      athleteProfile: {
+        upsert: {
+          update: { athleteNumber: athleteNumber || null },
+          create: { athleteNumber: athleteNumber || null },
+        },
+      },
+    },
   });
 
   revalidatePath(`/admin/athletes/${athleteId}`);
