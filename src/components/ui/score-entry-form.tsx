@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ScoreEntryState } from "@/app/(portal)/(admin)/admin/events/scores/actions";
 
 const inputClass = "w-full bg-sage px-4 py-3 text-sm text-white placeholder-white/70 outline-none";
@@ -22,12 +23,16 @@ export function ScoreEntryForm({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const athleteInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (state.status === "idle" || pending) return;
     formRef.current?.reset();
     athleteInputRef.current?.focus();
-  }, [state, pending]);
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, pending, router]);
 
   const matches = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
