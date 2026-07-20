@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { ScoreEntryForm } from "@/components/ui/score-entry-form";
-import { recordTime } from "./actions";
+import { recordTime, searchAthletes } from "./actions";
 
 function formatSeconds(seconds: number | null) {
   if (seconds === null) return "—";
@@ -25,23 +25,11 @@ export default async function AdminScoreEntryPage({
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) notFound();
 
-  const [registrations, roster] = await Promise.all([
-    prisma.eventRegistration.findMany({
-      where: { eventId },
-      include: { user: { include: { athleteProfile: true } } },
-      orderBy: { user: { athleteProfile: { athleteNumber: "asc" } } },
-    }),
-    prisma.athleteProfile.findMany({
-      where: { athleteNumber: { not: null } },
-      select: { athleteNumber: true, user: { select: { name: true, surname: true } } },
-      orderBy: { athleteNumber: "asc" },
-    }),
-  ]);
-
-  const athleteOptions = roster.map((a) => ({
-    athleteNumber: a.athleteNumber as string,
-    name: `${a.user.name} ${a.user.surname}`,
-  }));
+  const registrations = await prisma.eventRegistration.findMany({
+    where: { eventId },
+    include: { user: { include: { athleteProfile: true } } },
+    orderBy: { user: { athleteProfile: { athleteNumber: "asc" } } },
+  });
 
   const entered = registrations.filter((r) =>
     discipline === "RUNNING"
@@ -79,7 +67,7 @@ export default async function AdminScoreEntryPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.7fr]">
         <Card title="Enter time">
-          <ScoreEntryForm action={boundAction} athletes={athleteOptions} />
+          <ScoreEntryForm action={boundAction} searchAthletes={searchAthletes} />
         </Card>
 
         <Card title={`Recorded (${entered.length})`} className="overflow-x-auto">

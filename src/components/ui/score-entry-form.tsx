@@ -1,28 +1,32 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ScoreEntryState } from "@/app/(portal)/(admin)/admin/events/scores/actions";
+import type {
+  AthleteSearchResult,
+  ScoreEntryState,
+} from "@/app/(portal)/(admin)/admin/events/scores/actions";
 
 const inputClass = "w-full bg-sage px-4 py-3 text-sm text-white placeholder-white/70 outline-none";
-
-type AthleteOption = { athleteNumber: string; name: string };
+const SEARCH_DEBOUNCE_MS = 200;
 
 export function ScoreEntryForm({
   action,
-  athletes,
+  searchAthletes,
 }: {
   action: (prevState: ScoreEntryState, formData: FormData) => Promise<ScoreEntryState>;
-  athletes: AthleteOption[];
+  searchAthletes: (query: string) => Promise<AthleteSearchResult[]>;
 }) {
   const [state, formAction, pending] = useActionState<ScoreEntryState, FormData>(action, {
     status: "idle",
     message: "",
   });
-  const [query, setQuery] = useState("");
+  const [matches, setMatches] = useState<AthleteSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const athleteInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchToken = useRef(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -34,23 +38,27 @@ export function ScoreEntryForm({
     }
   }, [state, pending, router]);
 
-  const matches = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return [];
-    return athletes
-      .filter(
-        (a) =>
-          a.athleteNumber.toLowerCase().includes(trimmed) ||
-          a.name.toLowerCase().includes(trimmed),
-      )
-      .slice(0, 8);
-  }, [query, athletes]);
+  function handleQueryChange(value: string) {
+    setShowSuggestions(true);
+
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (!value.trim()) {
+      setMatches([]);
+      return;
+    }
+
+    const token = ++searchToken.current;
+    searchTimeout.current = setTimeout(async () => {
+      const results = await searchAthletes(value);
+      if (searchToken.current === token) setMatches(results);
+    }, SEARCH_DEBOUNCE_MS);
+  }
 
   return (
     <form
       ref={formRef}
       action={formAction}
-      onReset={() => setQuery("")}
+      onReset={() => setMatches([])}
       className="space-y-4"
     >
       <div className="relative">
@@ -59,10 +67,7 @@ export function ScoreEntryForm({
           ref={athleteInputRef}
           name="athleteNumber"
           defaultValue=""
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setShowSuggestions(true);
-          }}
+          onChange={(e) => handleQueryChange(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           autoComplete="off"
@@ -81,7 +86,6 @@ export function ScoreEntryForm({
                     if (athleteInputRef.current) {
                       athleteInputRef.current.value = athlete.athleteNumber;
                     }
-                    setQuery(athlete.athleteNumber);
                     setShowSuggestions(false);
                   }}
                   className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm text-white hover:bg-sage/60"

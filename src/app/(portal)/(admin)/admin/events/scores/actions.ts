@@ -10,6 +10,35 @@ export type ScoreEntryState = {
   message: string;
 };
 
+export type AthleteSearchResult = { athleteNumber: string; name: string };
+
+export async function searchAthletes(query: string): Promise<AthleteSearchResult[]> {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") return [];
+
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const athletes = await prisma.athleteProfile.findMany({
+    where: {
+      athleteNumber: { not: null },
+      OR: [
+        { athleteNumber: { contains: trimmed, mode: "insensitive" } },
+        { user: { name: { contains: trimmed, mode: "insensitive" } } },
+        { user: { surname: { contains: trimmed, mode: "insensitive" } } },
+      ],
+    },
+    select: { athleteNumber: true, user: { select: { name: true, surname: true } } },
+    orderBy: { athleteNumber: "asc" },
+    take: 8,
+  });
+
+  return athletes.map((a) => ({
+    athleteNumber: a.athleteNumber as string,
+    name: `${a.user.name} ${a.user.surname}`,
+  }));
+}
+
 // Accepts "ss", "mm:ss", or "h:mm:ss" (fractional seconds allowed) and
 // returns whole seconds. Matches the legacy "Enter Run/Swim Times" forms,
 // which took a single time text box per athlete.
