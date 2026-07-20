@@ -2,12 +2,14 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { importLegacyReferenceData } from "./legacy-import/import";
 import { importLegacyAthletes } from "./legacy-import/importAthletes";
+import { importLegacyFees } from "./legacy-import/importFees";
 
 const prisma = new PrismaClient();
 
 async function main() {
   await importLegacyReferenceData(prisma);
   await importLegacyAthletes(prisma);
+  await importLegacyFees(prisma);
 
   const passwordHash = await bcrypt.hash("password123", 10);
 
