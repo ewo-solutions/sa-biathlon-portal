@@ -1,17 +1,31 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 
+const PAGE_SIZE = 24;
+
 export default async function AdminEventsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
 
-  const events = await prisma.event.findMany({
-    where: q ? { name: { contains: q, mode: "insensitive" } } : undefined,
-    orderBy: { eventDate: "desc" },
-  });
+  const where = q ? { name: { contains: q, mode: "insensitive" as const } } : undefined;
+
+  const [events, total] = await Promise.all([
+    prisma.event.findMany({
+      where,
+      orderBy: { eventDate: "desc" },
+      take: PAGE_SIZE,
+      skip: (page - 1) * PAGE_SIZE,
+    }),
+    prisma.event.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pageLink = (p: number) =>
+    `/admin/events?${new URLSearchParams({ ...(q ? { q } : {}), page: String(p) })}`;
 
   return (
     <div>
@@ -31,12 +45,7 @@ export default async function AdminEventsPage({
             className="w-full max-w-xl bg-sage px-4 py-4 text-sm text-white placeholder-white/80 outline-none"
           />
         </form>
-        <button
-          type="button"
-          className="tracked-caps bg-gold px-6 py-4 text-sm font-black text-panel-alt transition hover:bg-gold-light"
-        >
-          Filter
-        </button>
+        <p className="text-sm text-muted">{total.toLocaleString()} events</p>
       </div>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
@@ -63,13 +72,23 @@ export default async function AdminEventsPage({
                   year: "numeric",
                 })}
               </p>
-              <p className="mt-3 line-clamp-4 text-sm text-white/80">{event.description}</p>
-              <Link
-                href={`/admin/events/new?eventId=${event.id}`}
-                className="tracked-caps mt-4 block bg-white py-2.5 text-center text-xs font-bold text-panel-alt transition hover:bg-white/90"
-              >
-                Edit
-              </Link>
+              {event.description && (
+                <p className="mt-3 line-clamp-4 text-sm text-white/80">{event.description}</p>
+              )}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Link
+                  href={`/admin/events/new?eventId=${event.id}`}
+                  className="tracked-caps block bg-white py-2.5 text-center text-xs font-bold text-panel-alt transition hover:bg-white/90"
+                >
+                  Edit
+                </Link>
+                <Link
+                  href={`/admin/events/report?eventId=${event.id}`}
+                  className="tracked-caps block bg-gold py-2.5 text-center text-xs font-bold text-panel-alt transition hover:bg-gold-light"
+                >
+                  Report
+                </Link>
+              </div>
             </div>
           </div>
         ))}
@@ -80,14 +99,35 @@ export default async function AdminEventsPage({
         )}
       </div>
 
-      <div className="mt-10 flex justify-end">
-        <button
-          type="button"
-          className="tracked-caps bg-gold px-6 py-4 text-sm font-black text-panel-alt transition hover:bg-gold-light"
-        >
-          Load more
-        </button>
-      </div>
+      {totalPages > 1 && (
+        <div className="mt-10 flex items-center justify-between gap-4">
+          <Link
+            href={pageLink(Math.max(1, page - 1))}
+            aria-disabled={page <= 1}
+            className={`tracked-caps px-4 py-2 text-xs font-black transition ${
+              page <= 1
+                ? "pointer-events-none bg-panel-alt text-muted"
+                : "bg-gold text-panel-alt hover:bg-gold-light"
+            }`}
+          >
+            Previous
+          </Link>
+          <p className="text-sm text-muted">
+            Page {page} of {totalPages}
+          </p>
+          <Link
+            href={pageLink(Math.min(totalPages, page + 1))}
+            aria-disabled={page >= totalPages}
+            className={`tracked-caps px-4 py-2 text-xs font-black transition ${
+              page >= totalPages
+                ? "pointer-events-none bg-panel-alt text-muted"
+                : "bg-gold text-panel-alt hover:bg-gold-light"
+            }`}
+          >
+            Next
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

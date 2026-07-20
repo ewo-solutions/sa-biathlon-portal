@@ -39,6 +39,12 @@ export default async function EditCreateEventPage({
             >
               Enter Swim Times
             </Link>
+            <Link
+              href={`/admin/events/report?eventId=${event.id}`}
+              className="tracked-caps bg-gold px-4 py-2.5 text-xs font-black text-panel-alt transition hover:bg-gold-light"
+            >
+              View Report
+            </Link>
           </div>
         )}
       </div>

@@ -38,7 +38,7 @@ export function DashboardShell({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 shrink-0 -translate-x-full flex-col gap-2 overflow-y-auto rounded-r-[46px] bg-panel px-5 py-8 shadow-[0_0_34px_rgba(0,0,0,0.5)] transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 shrink-0 -translate-x-full flex-col gap-2 overflow-y-auto rounded-r-[46px] bg-panel px-5 py-8 shadow-[0_0_34px_rgba(0,0,0,0.5)] transition-transform duration-200 print:hidden lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           menuOpen ? "translate-x-0" : ""
         }`}
       >
@@ -84,7 +84,7 @@ export function DashboardShell({
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="flex items-center justify-between gap-4 bg-gold px-4 py-4 shadow-[0_0_34px_rgba(0,0,0,0.25)] sm:px-8 sm:py-6">
+        <header className="flex items-center justify-between gap-4 bg-gold px-4 py-4 shadow-[0_0_34px_rgba(0,0,0,0.25)] print:hidden sm:px-8 sm:py-6">
           <button
             type="button"
             aria-label="Open menu"
@@ -106,7 +106,7 @@ export function DashboardShell({
             </form>
           </div>
         </header>
-        <main className="p-4 sm:p-6 lg:p-10">{children}</main>
+        <main className="p-4 print:p-0 sm:p-6 lg:p-10">{children}</main>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { importLegacyReferenceData } from "./legacy-import/import";
 import { importLegacyAthletes } from "./legacy-import/importAthletes";
 import { importLegacyFees } from "./legacy-import/importFees";
+import { importLegacyCompetitions } from "./legacy-import/importCompetitions";
 
 const prisma = new PrismaClient();
 
@@ -24,6 +25,8 @@ async function main() {
       surname: "Admin",
     },
   });
+
+  await importLegacyCompetitions(prisma);
 
   const westernCape = await prisma.province.upsert({
     where: { abbreviation: "WC" },

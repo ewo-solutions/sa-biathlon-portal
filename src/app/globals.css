@@ -26,3 +26,10 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.22em;
 }
+
+@media print {
+  body {
+    background-color: white;
+    color: black;
+  }
+}
