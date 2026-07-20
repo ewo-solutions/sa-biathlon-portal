@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { isAspNetIdentityHash, verifyAspNetIdentityPassword } from "@/lib/legacy-password";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -24,8 +25,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) return null;
 
-        const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+        // Imported accounts keep their ASP.NET Core Identity hash (a
+        // different format than bcrypt) until they successfully log in once,
+        // at which point we transparently upgrade them to bcrypt.
+        if (isAspNetIdentityHash(user.passwordHash)) {
+          const valid = verifyAspNetIdentityPassword(password, user.passwordHash);
+          if (!valid) return null;
+
+          const passwordHash = await bcrypt.hash(password, 10);
+          await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+        } else {
+          const valid = await bcrypt.compare(password, user.passwordHash);
+          if (!valid) return null;
+        }
 
         return {
           id: user.id,
