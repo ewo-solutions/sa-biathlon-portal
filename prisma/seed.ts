@@ -58,7 +58,12 @@ async function main() {
 
   const athlete = await prisma.user.upsert({
     where: { email: "athlete@sabiathlon.co.za" },
-    update: {},
+    update: {
+      name: "Jane",
+      surname: "Athlete",
+      cellphone: "0821234567",
+      province: "Western Cape",
+    },
     create: {
       email: "athlete@sabiathlon.co.za",
       passwordHash,
@@ -67,19 +72,23 @@ async function main() {
       surname: "Athlete",
       cellphone: "0821234567",
       province: "Western Cape",
-      athleteProfile: {
-        create: {
-          athleteNumber: "WC0001",
-          club: "Cape Town Biathlon Club",
-          discipline: "Sprint",
-          provinceId: westernCape.id,
-          schoolId: capeTownClub.id,
-          groupId: u14Boys.id,
-          dateOfBirth: new Date("2013-05-14"),
-        },
-      },
     },
-    include: { athleteProfile: true },
+  });
+
+  const athleteProfileData = {
+    athleteNumber: "WC0001",
+    club: "Cape Town Biathlon Club",
+    discipline: "Sprint",
+    provinceId: westernCape.id,
+    schoolId: capeTownClub.id,
+    groupId: u14Boys.id,
+    dateOfBirth: new Date("2013-05-14"),
+  };
+
+  const athleteProfile = await prisma.athleteProfile.upsert({
+    where: { userId: athlete.id },
+    update: athleteProfileData,
+    create: { userId: athlete.id, ...athleteProfileData },
   });
 
   const event = await prisma.event.upsert({
@@ -114,20 +123,18 @@ async function main() {
     },
   });
 
-  if (athlete.athleteProfile) {
-    await prisma.result.upsert({
-      where: { id: "seed-result-1" },
-      update: {},
-      create: {
-        id: "seed-result-1",
-        eventId: event.id,
-        athleteProfileId: athlete.athleteProfile.id,
-        season: 2024,
-        position: 4,
-        timeSeconds: 3120,
-      },
-    });
-  }
+  await prisma.result.upsert({
+    where: { id: "seed-result-1" },
+    update: {},
+    create: {
+      id: "seed-result-1",
+      eventId: event.id,
+      athleteProfileId: athleteProfile.id,
+      season: 2024,
+      position: 4,
+      timeSeconds: 3120,
+    },
+  });
 
   console.log("Seed complete:");
   console.log("  admin:   admin@sabiathlon.co.za / password123");
