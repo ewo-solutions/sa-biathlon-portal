@@ -32,20 +32,30 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum RecordScope {
+  NATIONAL
+  PROVINCIAL
+}
+
+enum HeatDiscipline {
+  RUNNING
+  SWIMMING
+}
+
 // One account per person. Role decides which dashboard they land on;
 // AthleteProfile only exists for Role.ATHLETE accounts.
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  role          Role     @default(ATHLETE)
-  name          String
-  surname       String
-  cellphone     String?
-  province      String?
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String
+  role            Role     @default(ATHLETE)
+  name            String
+  surname         String
+  cellphone       String?
+  province        String?
   profileImageUrl String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   athleteProfile     AthleteProfile?
   createdEvents      Event[]             @relation("EventCreatedBy")
@@ -56,109 +66,310 @@ model User {
   @@index([role])
 }
 
+// Province governing body — the top of the club/athlete hierarchy carried
+// over from the legacy Azure schema (Provinces table).
+model Province {
+  id           String   @id @default(cuid())
+  name         String
+  abbreviation String   @unique
+  description  String?
+  addressLine1 String?
+  addressLine2 String?
+  addressLine3 String?
+  postalCode   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  schools            School[]
+  athletes           AthleteProfile[]
+  hostedCompetitions Event[]             @relation("CompetitionHost")
+  fees               Membership[]
+  records            CompetitionRecord[]
+
+  @@index([abbreviation])
+}
+
+// Club/school an athlete competes for (legacy Schools table — "Club
+// Information form" in the old manual).
+model School {
+  id           String   @id @default(cuid())
+  name         String
+  abbreviation String?
+  description  String?
+  addressLine1 String?
+  addressLine2 String?
+  addressLine3 String?
+  postalCode   String?
+  type         String?
+  registered   Boolean  @default(true)
+  provinceId   String
+  province     Province @relation(fields: [provinceId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  athletes AthleteProfile[]
+
+  @@index([provinceId])
+}
+
+// Age/gender/discipline category. Drives auto-assignment from DOB and the
+// scoring formula used to convert times into points (legacy Groups table).
+model Group {
+  id                      String   @id @default(cuid())
+  name                    String
+  description             String?
+  gender                  String?
+  ageStart                Int
+  ageEnd                  Int
+  disabilityGroup         Boolean  @default(false)
+  order                   Int      @default(0)
+  runningDistanceMeters   Int?
+  runningGoalTimeSeconds  Int?
+  runningPoints           Decimal? @db.Decimal(10, 2)
+  runningPointsPerSecond  Decimal? @db.Decimal(10, 4)
+  swimmingDistanceMeters  Int?
+  swimmingGoalTimeSeconds Int?
+  swimmingPoints          Decimal? @db.Decimal(10, 2)
+  swimmingPointsPerSecond Decimal? @db.Decimal(10, 4)
+  swimmingPenalty25       Decimal? @db.Decimal(10, 2)
+  swimmingPenalty50       Decimal? @db.Decimal(10, 2)
+  bonusPoints             Decimal? @db.Decimal(10, 2)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  athletes      AthleteProfile[]
+  registrations EventRegistration[]
+  heats         Heat[]
+  records       CompetitionRecord[]
+
+  @@index([ageStart, ageEnd])
+}
+
 // Athlete-specific fields that don't belong on every User (admins don't need these).
 model AthleteProfile {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dateOfBirth DateTime?
-  idNumber   String?
-  club       String?
-  discipline String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  athleteNumber       String?   @unique
+  dateOfBirth         DateTime?
+  idNumber            String?
+  gender              String?
+  disability          Boolean   @default(false)
+  status              Boolean   @default(true)
+  outOfSchool         Boolean   @default(false)
+  club                String?
+  discipline          String?
+  provinceId          String?
+  province            Province? @relation(fields: [provinceId], references: [id])
+  schoolId            String?
+  school              School?   @relation(fields: [schoolId], references: [id])
+  groupId             String?
+  group               Group?    @relation(fields: [groupId], references: [id])
+  personalBestSeconds Int?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  results    Result[]
+  results Result[]
+  records CompetitionRecord[]
+
+  @@index([provinceId])
+  @@index([schoolId])
+  @@index([groupId])
 }
 
 model Event {
-  id             String   @id @default(cuid())
-  name           String
-  description    String   @db.Text
-  location       String?
+  id               String   @id @default(cuid())
+  name             String
+  description      String   @db.Text
+  location         String?
   swimmingLocation String?
   registrationInfo String?
-  eventDate      DateTime
-  registrationFee Decimal? @db.Decimal(10, 2)
-  capacity       Int?
-  imageUrl       String?
-  createdById    String
-  createdBy      User     @relation("EventCreatedBy", fields: [createdById], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  eventDate        DateTime
+  registrationFee  Decimal? @db.Decimal(10, 2)
+  capacity         Int?
+  imageUrl         String?
+  createdById      String
+  createdBy        User     @relation("EventCreatedBy", fields: [createdById], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  registrations  EventRegistration[]
-  results        Result[]
+  // Competition/meeting fields carried over from the legacy Meeting form.
+  competitionType       String?
+  registrationOpenDate  DateTime?
+  registrationCloseDate DateTime?
+  poolSize              Int?
+  runningHeatLanes      Int?
+  swimmingLanes         Int?
+  resultsApproved       Boolean   @default(false)
+  resultsApprovedBy     String?
+  hostProvinceId        String?
+  hostProvince          Province? @relation("CompetitionHost", fields: [hostProvinceId], references: [id])
+
+  registrations EventRegistration[]
+  results       Result[]
+  heats         Heat[]
+  records       CompetitionRecord[]
 
   @@index([eventDate])
 }
 
-// Sign-up record for the "sign up" action on Upcoming Events cards.
+// Sign-up record for the "sign up" action on Upcoming Events cards — also
+// doubles as the per-competition entry + result (legacy CompetitionAthletes
+// table), since in this system every entrant either has or will have times.
 model EventRegistration {
-  id        String              @id @default(cuid())
+  id        String             @id @default(cuid())
   eventId   String
-  event     Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event     Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   userId    String
-  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status    RegistrationStatus  @default(REGISTERED)
-  createdAt DateTime            @default(now())
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    RegistrationStatus @default(REGISTERED)
+  createdAt DateTime           @default(now())
 
-  payment   Payment?
+  // Per-competition overrides (an athlete's group/disability status can
+  // differ per event from their profile default).
+  groupId    String?
+  group      Group?   @relation(fields: [groupId], references: [id])
+  disability Boolean?
+
+  // Manual score entry — filled in via the admin "Enter Run Times"/"Enter
+  // Swim Times" screens.
+  runningTimeSeconds  Int?
+  runningDnf          Boolean  @default(false)
+  runningFalseStart   Boolean  @default(false)
+  runningPoints       Decimal? @db.Decimal(10, 2)
+  runningBonusPoints  Decimal? @db.Decimal(10, 2)
+  swimmingTimeSeconds Int?
+  swimmingDnf         Boolean  @default(false)
+  swimmingFalseStart  Boolean  @default(false)
+  swimmingPoints      Decimal? @db.Decimal(10, 2)
+  swimmingBonusPoints Decimal? @db.Decimal(10, 2)
+  personalBest        Boolean  @default(false)
+  seasonalBest        Boolean  @default(false)
+  feesPaid            Boolean  @default(false)
+
+  // Heat/lane assignment, set once "Calc Lanes" has run.
+  runningHeatId  String?
+  runningHeat    Heat?   @relation("RunningHeatEntries", fields: [runningHeatId], references: [id])
+  runningLane    Int?
+  swimmingHeatId String?
+  swimmingHeat   Heat?   @relation("SwimmingHeatEntries", fields: [swimmingHeatId], references: [id])
+  swimmingLane   Int?
+
+  payment Payment?
 
   @@unique([eventId, userId])
   @@index([userId])
+  @@index([groupId])
+}
+
+// A single running or swimming heat within a competition, with lane
+// assignments living on the linked EventRegistration rows (legacy
+// Heats/HeatAthletes/HeatGroups tables, collapsed).
+model Heat {
+  id         String         @id @default(cuid())
+  eventId    String
+  event      Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  discipline HeatDiscipline
+  heatNumber Int
+  groupId    String?
+  group      Group?         @relation(fields: [groupId], references: [id])
+  createdAt  DateTime       @default(now())
+
+  runningEntries  EventRegistration[] @relation("RunningHeatEntries")
+  swimmingEntries EventRegistration[] @relation("SwimmingHeatEntries")
+
+  @@unique([eventId, discipline, heatNumber])
+  @@index([eventId])
+}
+
+// National/provincial record, tied to the competition and group it was set
+// in, with the same approve/reject workflow as the legacy Access system.
+model CompetitionRecord {
+  id               String         @id @default(cuid())
+  scope            RecordScope
+  provinceId       String?
+  province         Province?      @relation(fields: [provinceId], references: [id])
+  eventId          String
+  event            Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  groupId          String
+  group            Group          @relation(fields: [groupId], references: [id])
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  discipline       HeatDiscipline
+  timeSeconds      Int
+  approved         Boolean        @default(false)
+  approvedBy       String?
+  approvedAt       DateTime?
+  active           Boolean        @default(true)
+  rejected         Boolean        @default(false)
+  rejectedBy       String?
+  rejectedAt       DateTime?
+  createdAt        DateTime       @default(now())
+
+  @@index([scope, provinceId])
+  @@index([groupId])
+  @@index([athleteProfileId])
 }
 
 // Results archive, browsable by year on the athlete Results page.
 model Result {
-  id               String          @id @default(cuid())
+  id               String         @id @default(cuid())
   eventId          String
-  event            Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event            Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
   athleteProfileId String
-  athleteProfile   AthleteProfile  @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
   season           Int
   position         Int?
   timeSeconds      Int?
   documentUrl      String?
-  createdAt        DateTime        @default(now())
+  createdAt        DateTime       @default(now())
 
   @@index([season])
   @@index([athleteProfileId])
 }
 
 // Yearly season affiliation, e.g. "2024/2025 Season Affiliation" at R300/y.
+// Also carries the legacy per-province national fee tracking
+// (AthleteFees table: who processed it, whether it was via a gateway, and
+// whether the national portion specifically has been paid).
 model Membership {
-  id         String            @id @default(cuid())
-  userId     String
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  seasonLabel String
-  feeAmount  Decimal           @db.Decimal(10, 2)
-  status     MembershipStatus  @default(ACTIVE)
-  purchasedAt DateTime
-  expiresAt  DateTime
-  createdAt  DateTime          @default(now())
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seasonLabel      String
+  feeAmount        Decimal          @db.Decimal(10, 2)
+  status           MembershipStatus @default(ACTIVE)
+  purchasedAt      DateTime
+  expiresAt        DateTime
+  provinceId       String?
+  province         Province?        @relation(fields: [provinceId], references: [id])
+  processedBy      String?
+  paidViaGateway   Boolean          @default(false)
+  nationalFeesPaid Boolean          @default(false)
+  createdAt        DateTime         @default(now())
 
-  payment    Payment?
+  payment Payment?
 
   @@index([userId])
+  @@index([provinceId])
 }
 
 // Shared by event registrations and membership renewals — one payment can
 // settle either, never both.
 model Payment {
-  id                  String              @id @default(cuid())
+  id                  String             @id @default(cuid())
   userId              String
-  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  eventRegistrationId String?             @unique
-  eventRegistration   EventRegistration?  @relation(fields: [eventRegistrationId], references: [id], onDelete: SetNull)
-  membershipId        String?             @unique
-  membership          Membership?         @relation(fields: [membershipId], references: [id], onDelete: SetNull)
-  amount              Decimal             @db.Decimal(10, 2)
-  status              PaymentStatus       @default(PENDING)
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventRegistrationId String?            @unique
+  eventRegistration   EventRegistration? @relation(fields: [eventRegistrationId], references: [id], onDelete: SetNull)
+  membershipId        String?            @unique
+  membership          Membership?        @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  amount              Decimal            @db.Decimal(10, 2)
+  status              PaymentStatus      @default(PENDING)
   provider            String?
   providerRef         String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   @@index([userId])
 }

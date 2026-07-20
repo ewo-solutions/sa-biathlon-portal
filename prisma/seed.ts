@@ -18,6 +18,44 @@ async function main() {
     },
   });
 
+  const westernCape = await prisma.province.upsert({
+    where: { abbreviation: "WC" },
+    update: {},
+    create: {
+      id: "seed-province-wc",
+      name: "Western Cape",
+      abbreviation: "WC",
+    },
+  });
+
+  const capeTownClub = await prisma.school.upsert({
+    where: { id: "seed-school-1" },
+    update: {},
+    create: {
+      id: "seed-school-1",
+      name: "Cape Town Biathlon Club",
+      abbreviation: "CTBC",
+      provinceId: westernCape.id,
+    },
+  });
+
+  const u14Boys = await prisma.group.upsert({
+    where: { id: "seed-group-1" },
+    update: {},
+    create: {
+      id: "seed-group-1",
+      name: "U14 Boys",
+      gender: "MALE",
+      ageStart: 12,
+      ageEnd: 14,
+      runningDistanceMeters: 2500,
+      runningPointsPerSecond: "0.5",
+      swimmingDistanceMeters: 200,
+      swimmingPointsPerSecond: "1.2",
+      bonusPoints: "10",
+    },
+  });
+
   const athlete = await prisma.user.upsert({
     where: { email: "athlete@sabiathlon.co.za" },
     update: {},
@@ -31,8 +69,13 @@ async function main() {
       province: "Western Cape",
       athleteProfile: {
         create: {
+          athleteNumber: "WC0001",
           club: "Cape Town Biathlon Club",
           discipline: "Sprint",
+          provinceId: westernCape.id,
+          schoolId: capeTownClub.id,
+          groupId: u14Boys.id,
+          dateOfBirth: new Date("2013-05-14"),
         },
       },
     },
@@ -66,6 +109,8 @@ async function main() {
       status: "ACTIVE",
       purchasedAt: new Date("2024-02-24"),
       expiresAt: new Date("2025-02-24"),
+      provinceId: westernCape.id,
+      nationalFeesPaid: true,
     },
   });
 
