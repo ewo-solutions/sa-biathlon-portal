@@ -1,4 +1,4 @@
-import { Home, Zap, CalendarDays, User, BarChart3 } from "lucide-react";
+import { Home, Zap, CalendarDays, User, BarChart3, Settings } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { DashboardShell, type NavItem } from "@/components/dashboard-shell";
@@ -7,6 +7,7 @@ const navItems: NavItem[] = [
   { label: "Home", href: "/admin", icon: <Home size={20} /> },
   { label: "Athletes", href: "/admin/athletes", icon: <Zap size={20} /> },
   { label: "Events", href: "/admin/events", icon: <CalendarDays size={20} /> },
+  { label: "Setup", href: "/admin/setup", icon: <Settings size={20} /> },
   { label: "My Profile", href: "/admin/profile", icon: <User size={20} /> },
   { label: "Statistics", href: "/admin/statistics", icon: <BarChart3 size={20} /> },
 ];
