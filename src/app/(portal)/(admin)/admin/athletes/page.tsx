@@ -3,6 +3,13 @@ import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 
 const PAGE_SIZE = 50;
+const PLACEHOLDER_EMAIL_DOMAIN = "@imported.sabiathlon.local";
+
+function displayEmail(contactEmail: string | null | undefined, loginEmail: string) {
+  if (contactEmail) return contactEmail;
+  if (loginEmail.endsWith(PLACEHOLDER_EMAIL_DOMAIN)) return "—";
+  return loginEmail;
+}
 
 export default async function AdminAthletesPage({
   searchParams,
@@ -30,7 +37,7 @@ export default async function AdminAthletesPage({
       orderBy: { surname: "asc" },
       include: {
         memberships: { where: { status: "ACTIVE" }, take: 1, orderBy: { expiresAt: "desc" } },
-        athleteProfile: true,
+        athleteProfile: { include: { province: true, school: true } },
       },
       take: PAGE_SIZE,
       skip: (page - 1) * PAGE_SIZE,
@@ -67,7 +74,7 @@ export default async function AdminAthletesPage({
               <th className="py-2 pr-4 font-black">Name</th>
               <th className="py-2 pr-4 font-black">Email</th>
               <th className="py-2 pr-4 font-black">Province</th>
-              <th className="py-2 pr-4 font-black">Club</th>
+              <th className="py-2 pr-4 font-black">School / Club</th>
               <th className="py-2 font-black">Membership</th>
             </tr>
           </thead>
@@ -86,11 +93,15 @@ export default async function AdminAthletesPage({
                 </td>
                 <td className="py-3 pr-4 text-white/80">
                   <Link href={`/admin/athletes/${athlete.id}`} className="block">
-                    {athlete.email}
+                    {displayEmail(athlete.athleteProfile?.contactEmail, athlete.email)}
                   </Link>
                 </td>
-                <td className="py-3 pr-4 text-white/80">{athlete.province ?? "—"}</td>
-                <td className="py-3 pr-4 text-white/80">{athlete.athleteProfile?.club ?? "—"}</td>
+                <td className="py-3 pr-4 text-white/80">
+                  {athlete.athleteProfile?.province?.name ?? "—"}
+                </td>
+                <td className="py-3 pr-4 text-white/80">
+                  {athlete.athleteProfile?.school?.name ?? "—"}
+                </td>
                 <td className="py-3 text-white/80">
                   {athlete.memberships[0] ? (
                     <span className="bg-sage px-3 py-1 text-xs font-bold text-white">

@@ -159,6 +159,10 @@ model AthleteProfile {
   outOfSchool         Boolean   @default(false)
   club                String?
   discipline          String?
+  // Legacy contact email (often a parent/guardian address) — separate from
+  // User.email, which is the login and may be a synthetic placeholder for
+  // imported athletes that never had a website account.
+  contactEmail        String?
   provinceId          String?
   province            Province? @relation(fields: [provinceId], references: [id])
   schoolId            String?

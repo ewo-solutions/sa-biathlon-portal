@@ -26,6 +26,7 @@ type LegacyAthlete = {
   GroupId: string | null;
   SchoolId: string | null;
   ProvinceId: string | null;
+  Email: string | null;
   PhoneNumber: string | null;
   Status: string;
   OutOfSchool: string;
@@ -56,6 +57,7 @@ function athleteProfileFields(athlete: LegacyAthlete) {
     disability: parseLegacyBool(athlete.Disability),
     status: parseLegacyBool(athlete.Status),
     outOfSchool: parseLegacyBool(athlete.OutOfSchool),
+    contactEmail: athlete.Email,
     provinceId: orNull(athlete.ProvinceId),
     schoolId: orNull(athlete.SchoolId),
     groupId: orNull(athlete.GroupId),
@@ -141,6 +143,33 @@ export async function importLegacyAthletes(prisma: PrismaClient) {
     })),
     skipDuplicates: true,
   });
+
+  // One-time backfill for rows created before contactEmail existed.
+  // createMany above only inserts brand-new rows, so anything imported in an
+  // earlier deploy needs its contactEmail filled in separately. Guarded by a
+  // count check so this is a single cheap query on every later deploy once
+  // the backfill has actually run.
+  const athletesWithEmail = shadowAthletes.filter((a) => a.Email);
+  const idsWithEmail = athletesWithEmail.map((a) => a.Id);
+  const pendingBackfill = await prisma.athleteProfile.count({
+    where: { id: { in: idsWithEmail }, contactEmail: null },
+  });
+
+  if (pendingBackfill > 0) {
+    const CHUNK_SIZE = 250;
+    for (let i = 0; i < athletesWithEmail.length; i += CHUNK_SIZE) {
+      const chunk = athletesWithEmail.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        chunk.map((a) =>
+          prisma.athleteProfile.update({
+            where: { id: a.Id },
+            data: { contactEmail: a.Email },
+          }),
+        ),
+      );
+    }
+    console.log(`Legacy athlete import: backfilled contactEmail on ${pendingBackfill} rows`);
+  }
 
   console.log(
     `Legacy athlete import: ${linkedUsers.length} real logins kept, ${newShadowAthletes.length} shadow accounts created (${shadowAthletes.length - newShadowAthletes.length} already existed), ${athletes.length} athletes total`,

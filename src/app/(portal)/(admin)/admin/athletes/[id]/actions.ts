@@ -19,8 +19,17 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
   const surname = formData.get("surname") as string;
   const cellphone = formData.get("cellphone") as string;
   const email = formData.get("email") as string;
-  const province = formData.get("province") as string;
   const athleteNumber = (formData.get("athleteNumber") as string)?.trim();
+  const contactEmail = (formData.get("contactEmail") as string)?.trim();
+  const provinceId = (formData.get("provinceId") as string) || null;
+  const schoolId = (formData.get("schoolId") as string) || null;
+
+  const profileFields = {
+    athleteNumber: athleteNumber || null,
+    contactEmail: contactEmail || null,
+    provinceId,
+    schoolId,
+  };
 
   await prisma.user.update({
     where: { id: athleteId, role: "ATHLETE" },
@@ -29,12 +38,8 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
       surname,
       cellphone,
       email,
-      province,
       athleteProfile: {
-        upsert: {
-          update: { athleteNumber: athleteNumber || null },
-          create: { athleteNumber: athleteNumber || null },
-        },
+        upsert: { update: profileFields, create: profileFields },
       },
     },
   });

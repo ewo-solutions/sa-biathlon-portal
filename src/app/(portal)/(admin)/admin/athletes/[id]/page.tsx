@@ -17,11 +17,11 @@ export default async function AdminAthleteDetailPage({
 
   const athlete = await prisma.user.findUnique({
     where: { id, role: "ATHLETE" },
-    include: { athleteProfile: true },
+    include: { athleteProfile: { include: { province: true, school: true } } },
   });
   if (!athlete) notFound();
 
-  const [membership, registrations] = await Promise.all([
+  const [membership, registrations, provinces, schools] = await Promise.all([
     prisma.membership.findFirst({
       where: { userId: id, status: "ACTIVE" },
       orderBy: { expiresAt: "desc" },
@@ -32,6 +32,8 @@ export default async function AdminAthleteDetailPage({
       orderBy: { event: { eventDate: "desc" } },
       take: 6,
     }),
+    prisma.province.findMany({ orderBy: { name: "asc" } }),
+    prisma.school.findMany({ orderBy: { name: "asc" } }),
   ]);
 
   const now = new Date();
@@ -105,7 +107,7 @@ export default async function AdminAthleteDetailPage({
                 />
               </div>
               <div>
-                <label className={labelClass}>Email</label>
+                <label className={labelClass}>Login email</label>
                 <input
                   name="email"
                   type="email"
@@ -115,12 +117,44 @@ export default async function AdminAthleteDetailPage({
                 />
               </div>
               <div>
-                <label className={labelClass}>Province</label>
+                <label className={labelClass}>Contact email</label>
                 <input
-                  name="province"
-                  defaultValue={athlete.province ?? ""}
+                  name="contactEmail"
+                  type="email"
+                  defaultValue={athlete.athleteProfile?.contactEmail ?? ""}
+                  placeholder="Athlete or parent/guardian email"
                   className={inputClass}
                 />
+              </div>
+              <div>
+                <label className={labelClass}>Province</label>
+                <select
+                  name="provinceId"
+                  defaultValue={athlete.athleteProfile?.provinceId ?? ""}
+                  className={inputClass}
+                >
+                  <option value="">Not set</option>
+                  {provinces.map((province) => (
+                    <option key={province.id} value={province.id}>
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>School / Club</label>
+                <select
+                  name="schoolId"
+                  defaultValue={athlete.athleteProfile?.schoolId ?? ""}
+                  className={inputClass}
+                >
+                  <option value="">Not set</option>
+                  {schools.map((school) => (
+                    <option key={school.id} value={school.id}>
+                      {school.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <button
                 type="submit"
