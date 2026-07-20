@@ -177,6 +177,19 @@ model AthleteProfile {
   @@index([groupId])
 }
 
+// Yearly competition season (legacy Seasons table), referenced by
+// competitions and season fees.
+model Season {
+  id        String   @id @default(cuid())
+  label     String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+
+  events      Event[]
+  memberships Membership[]
+}
+
 model Event {
   id               String   @id @default(cuid())
   name             String
@@ -204,6 +217,8 @@ model Event {
   resultsApprovedBy     String?
   hostProvinceId        String?
   hostProvince          Province? @relation("CompetitionHost", fields: [hostProvinceId], references: [id])
+  seasonId              String?
+  season                Season?   @relation(fields: [seasonId], references: [id])
 
   registrations EventRegistration[]
   results       Result[]
@@ -343,6 +358,8 @@ model Membership {
   expiresAt        DateTime
   provinceId       String?
   province         Province?        @relation(fields: [provinceId], references: [id])
+  seasonId         String?
+  season           Season?          @relation(fields: [seasonId], references: [id])
   processedBy      String?
   paidViaGateway   Boolean          @default(false)
   nationalFeesPaid Boolean          @default(false)
@@ -352,6 +369,7 @@ model Membership {
 
   @@index([userId])
   @@index([provinceId])
+  @@index([seasonId])
 }
 
 // Shared by event registrations and membership renewals — one payment can

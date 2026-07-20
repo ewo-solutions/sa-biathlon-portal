@@ -1,0 +1,156 @@
+[
+  {
+    "Id": "ed522912-29b7-48b1-bcf3-180dee3edb83",
+    "Name": "CENTRAL GAUTENG",
+    "Description": "CENTRAL GAUTENG",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "CG",
+    "UserId": "ea410007-ba22-4824-8094-76cc5f978e5d"
+  },
+  {
+    "Id": "c0aca972-1be5-45fd-a416-26c116e78452",
+    "Name": "NORTH WEST",
+    "Description": "NORTH WEST",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "NW",
+    "UserId": "18d14a16-3725-43e4-b148-6631a90ba8f0"
+  },
+  {
+    "Id": "cbeb6a2a-9e3f-4baf-8971-4b6bb7f9fd89",
+    "Name": "EDEN",
+    "Description": "EDEN",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "EDEN",
+    "UserId": "3afbea9b-190a-44b1-acd9-886180a84459"
+  },
+  {
+    "Id": "95a0f169-f9d5-447b-975a-64baa950bf18",
+    "Name": "GRIQUAS",
+    "Description": "GRIQUAS",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "GRI",
+    "UserId": "6aa9cad0-20f6-4e0f-b75b-af213f8a76c9"
+  },
+  {
+    "Id": "03885158-c408-4ad0-8cfb-678e544e9779",
+    "Name": "BORDER",
+    "Description": "BORDER",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": "BEACON BAY",
+    "PostalCode": "5241",
+    "Abbreviation": "BOR",
+    "UserId": "c547ebff-a8a4-4b35-a48f-50f8b68d211e"
+  },
+  {
+    "Id": "11a440db-d254-4e2e-bf49-7740cf70018b",
+    "Name": "KWAZULU NATAL",
+    "Description": "KWAZULU NATAL",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "KZN",
+    "UserId": "e56b7eb8-9d52-4768-81bb-0e6b5996436b"
+  },
+  {
+    "Id": "6a8dab99-5bfa-4a0b-b22b-9a32eb5dc932",
+    "Name": "BOLAND",
+    "Description": "BOLAND",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "BOL",
+    "UserId": "01f9da66-7a9e-4285-90f8-f504ac786eca"
+  },
+  {
+    "Id": "af0c227d-4d4f-4492-94e5-b4d7c7e3479a",
+    "Name": "EASTERN PROVINCE",
+    "Description": "EASTERN PROVINCE",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "EP",
+    "UserId": "391f3557-f366-4cb3-a3ba-ec067577a9da"
+  },
+  {
+    "Id": "5d9659e8-0b09-401b-86dc-c049ba67e5a7",
+    "Name": "SOUTHERN FREE STATE",
+    "Description": "SOUTHERN FREE STATE",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "SFS",
+    "UserId": "b8e36153-d20d-4d5c-b1cb-6f854ce6a70d"
+  },
+  {
+    "Id": "d780cf74-ff50-4837-be73-c41ce0591d56",
+    "Name": "MPUMALANGA",
+    "Description": "MPUMALANGA",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "MP",
+    "UserId": "9a127e47-95e9-4d1e-958b-abf309d060f3"
+  },
+  {
+    "Id": "ed632030-8297-4870-9557-e022749b979b",
+    "Name": "WESTERN PROVINCE",
+    "Description": "WESTERN PROVINCE",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "WP",
+    "UserId": "ba0f1d23-e0fc-47f4-b7a9-9d8311f2db0b"
+  },
+  {
+    "Id": "ec7d2894-b924-4acc-9f01-e69b0a42fd18",
+    "Name": "GAUTENG NORTH",
+    "Description": "GAUTENG NORTH",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "GN",
+    "UserId": "1e86ae04-4def-41e8-9e40-560e078ccf2e"
+  },
+  {
+    "Id": "3d52398a-ab48-44b7-af9e-f2b6aceb0358",
+    "Name": "NORTHERN FREE STATE",
+    "Description": "NORTHERN FREE STATE",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "NFS",
+    "UserId": "fbba0244-0524-4478-b12a-373494c27e35"
+  },
+  {
+    "Id": "7f26094a-b6fa-4dd9-b20b-faa1278a13c8",
+    "Name": "LIMPOPO",
+    "Description": "LIMPOPO",
+    "AddressLine1": null,
+    "AddressLine2": null,
+    "AddressLine3": null,
+    "PostalCode": null,
+    "Abbreviation": "LIM",
+    "UserId": "4ecfb5cf-d899-437b-97ac-55d31aaa3637"
+  }
+]

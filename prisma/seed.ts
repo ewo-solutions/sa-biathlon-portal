@@ -1,9 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { importLegacyReferenceData } from "./legacy-import/import";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  await importLegacyReferenceData(prisma);
+
   const passwordHash = await bcrypt.hash("password123", 10);
 
   const admin = await prisma.user.upsert({
