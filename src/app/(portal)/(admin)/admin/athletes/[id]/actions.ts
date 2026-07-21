@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { fileToDataUri } from "@/lib/uploads";
+import { resolveGroupId } from "@/lib/group-assignment";
 
 async function requireAdmin() {
   const session = await auth();
@@ -23,12 +24,28 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
   const contactEmail = (formData.get("contactEmail") as string)?.trim();
   const provinceId = (formData.get("provinceId") as string) || null;
   const schoolId = (formData.get("schoolId") as string) || null;
+  const dateOfBirthInput = formData.get("dateOfBirth") as string;
+  const gender = (formData.get("gender") as string) || null;
+  const disability = formData.get("disability") === "on";
+
+  const dateOfBirth = dateOfBirthInput ? new Date(dateOfBirthInput) : null;
+  const province = provinceId ? await prisma.province.findUnique({ where: { id: provinceId } }) : null;
+  const groupId = await resolveGroupId(prisma, {
+    dateOfBirth,
+    gender,
+    disability,
+    asOf: province?.ageDate ?? undefined,
+  });
 
   const profileFields = {
     athleteNumber: athleteNumber || null,
     contactEmail: contactEmail || null,
     provinceId,
     schoolId,
+    dateOfBirth,
+    gender,
+    disability,
+    groupId,
   };
 
   await prisma.user.update({

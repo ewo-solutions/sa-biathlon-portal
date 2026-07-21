@@ -17,13 +17,13 @@ export default async function AdminAthleteDetailPage({
 
   const athlete = await prisma.user.findUnique({
     where: { id, role: "ATHLETE" },
-    include: { athleteProfile: { include: { province: true, school: true } } },
+    include: { athleteProfile: { include: { province: true, school: true, group: true } } },
   });
   if (!athlete) notFound();
 
   const [membership, registrations, provinces, schools] = await Promise.all([
     prisma.membership.findFirst({
-      where: { userId: id, status: "ACTIVE" },
+      where: { userId: id, status: "ACTIVE", expiresAt: { gte: new Date() } },
       orderBy: { expiresAt: "desc" },
     }),
     prisma.eventRegistration.findMany({
@@ -126,6 +126,45 @@ export default async function AdminAthleteDetailPage({
                   className={inputClass}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Date of birth</label>
+                  <input
+                    type="date"
+                    name="dateOfBirth"
+                    defaultValue={
+                      athlete.athleteProfile?.dateOfBirth
+                        ? athlete.athleteProfile.dateOfBirth.toISOString().slice(0, 10)
+                        : ""
+                    }
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Gender</label>
+                  <select
+                    name="gender"
+                    defaultValue={athlete.athleteProfile?.gender ?? ""}
+                    className={inputClass}
+                  >
+                    <option value="">Not set</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                  </select>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-white">
+                <input
+                  type="checkbox"
+                  name="disability"
+                  defaultChecked={athlete.athleteProfile?.disability ?? false}
+                />
+                Disability
+              </label>
+              <p className="text-xs text-muted">
+                Group: {athlete.athleteProfile?.group?.name ?? "—"} (auto-assigned from date of
+                birth, gender and disability on save)
+              </p>
               <div>
                 <label className={labelClass}>Province</label>
                 <select

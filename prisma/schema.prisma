@@ -69,16 +69,20 @@ model User {
 // Province governing body — the top of the club/athlete hierarchy carried
 // over from the legacy Azure schema (Provinces table).
 model Province {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
-  abbreviation String   @unique
+  abbreviation String    @unique
   description  String?
   addressLine1 String?
   addressLine2 String?
   addressLine3 String?
   postalCode   String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  contactName  String?
+  contactPhone String?
+  contactEmail String?
+  ageDate      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   schools            School[]
   athletes           AthleteProfile[]
@@ -102,6 +106,9 @@ model School {
   postalCode   String?
   type         String?
   registered   Boolean  @default(true)
+  contactName  String?
+  contactPhone String?
+  contactEmail String?
   provinceId   String
   province     Province @relation(fields: [provinceId], references: [id])
   createdAt    DateTime @default(now())

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
-import { saveProvince, deleteProvince } from "./actions";
+import { saveProvince, deleteProvince, recalculateProvinceGroups, resetProvinceFees } from "./actions";
 
 const inputClass = "w-full bg-sage px-4 py-3 text-sm text-white placeholder-white/70 outline-none";
 const labelClass = "mb-1 block text-sm text-white";
@@ -49,6 +49,45 @@ export default async function AdminProvincesPage({
                 className={inputClass}
               />
             </div>
+            <div>
+              <label className={labelClass}>Contact person</label>
+              <input
+                name="contactName"
+                defaultValue={editing?.contactName ?? ""}
+                className={inputClass}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Contact phone</label>
+                <input
+                  name="contactPhone"
+                  defaultValue={editing?.contactPhone ?? ""}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Contact email</label>
+                <input
+                  type="email"
+                  name="contactEmail"
+                  defaultValue={editing?.contactEmail ?? ""}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelClass}>Age date</label>
+              <p className="mb-1 text-xs text-muted">
+                Athlete ages/groups are calculated as of this date each season.
+              </p>
+              <input
+                type="date"
+                name="ageDate"
+                defaultValue={editing?.ageDate ? editing.ageDate.toISOString().slice(0, 10) : ""}
+                className={inputClass}
+              />
+            </div>
             <div className="flex gap-3">
               <button
                 type="submit"
@@ -74,6 +113,7 @@ export default async function AdminProvincesPage({
               <tr className="tracked-caps border-b border-white/10 text-muted">
                 <th className="py-2 pr-4 font-black">Name</th>
                 <th className="py-2 pr-4 font-black">Abbr.</th>
+                <th className="py-2 pr-4 font-black">Contact</th>
                 <th className="py-2 font-black">Actions</th>
               </tr>
             </thead>
@@ -82,14 +122,45 @@ export default async function AdminProvincesPage({
                 <tr key={province.id}>
                   <td className="py-3 pr-4 font-bold text-white">{province.name}</td>
                   <td className="py-3 pr-4 text-white/80">{province.abbreviation}</td>
+                  <td className="py-3 pr-4 text-white/80">
+                    {province.contactName || province.contactEmail || province.contactPhone ? (
+                      <div className="text-xs">
+                        {province.contactName && <p>{province.contactName}</p>}
+                        {province.contactPhone && <p className="text-muted">{province.contactPhone}</p>}
+                        {province.contactEmail && <p className="text-muted">{province.contactEmail}</p>}
+                      </div>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
                   <td className="py-3">
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3">
                       <Link
                         href={`/admin/setup/provinces?edit=${province.id}`}
                         className="text-gold hover:underline"
                       >
                         Edit
                       </Link>
+                      <form
+                        action={async () => {
+                          "use server";
+                          await recalculateProvinceGroups(province.id);
+                        }}
+                      >
+                        <button type="submit" className="text-white/80 hover:underline">
+                          Recalculate ages
+                        </button>
+                      </form>
+                      <form
+                        action={async () => {
+                          "use server";
+                          await resetProvinceFees(province.id);
+                        }}
+                      >
+                        <button type="submit" className="text-white/80 hover:underline">
+                          Reset SA Fees
+                        </button>
+                      </form>
                       <form
                         action={async () => {
                           "use server";
@@ -106,7 +177,7 @@ export default async function AdminProvincesPage({
               ))}
               {provinces.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-6 text-center text-muted">
+                  <td colSpan={4} className="py-6 text-center text-muted">
                     No provinces yet.
                   </td>
                 </tr>

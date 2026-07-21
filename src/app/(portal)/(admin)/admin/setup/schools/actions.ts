@@ -19,12 +19,18 @@ export async function saveSchool(formData: FormData) {
   const abbreviation = formData.get("abbreviation") as string;
   const provinceId = formData.get("provinceId") as string;
   const type = formData.get("type") as string;
+  const contactName = formData.get("contactName") as string;
+  const contactPhone = formData.get("contactPhone") as string;
+  const contactEmail = formData.get("contactEmail") as string;
 
   const data = {
     name,
     abbreviation: abbreviation || null,
     provinceId,
     type: type || null,
+    contactName: contactName || null,
+    contactPhone: contactPhone || null,
+    contactEmail: contactEmail || null,
   };
 
   if (id) {

@@ -36,7 +36,11 @@ export default async function AdminAthletesPage({
       where,
       orderBy: { surname: "asc" },
       include: {
-        memberships: { where: { status: "ACTIVE" }, take: 1, orderBy: { expiresAt: "desc" } },
+        memberships: {
+          where: { status: "ACTIVE", expiresAt: { gte: new Date() } },
+          take: 1,
+          orderBy: { expiresAt: "desc" },
+        },
         athleteProfile: { include: { province: true, school: true } },
       },
       take: PAGE_SIZE,

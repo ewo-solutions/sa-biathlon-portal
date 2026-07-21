@@ -68,6 +68,33 @@ export default async function AdminSchoolsPage({
                   className={inputClass}
                 />
               </div>
+              <div>
+                <label className={labelClass}>Contact person</label>
+                <input
+                  name="contactName"
+                  defaultValue={editing?.contactName ?? ""}
+                  className={inputClass}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Contact phone</label>
+                  <input
+                    name="contactPhone"
+                    defaultValue={editing?.contactPhone ?? ""}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Contact email</label>
+                  <input
+                    type="email"
+                    name="contactEmail"
+                    defaultValue={editing?.contactEmail ?? ""}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
               <div className="flex gap-3">
                 <button
                   type="submit"
@@ -94,6 +121,7 @@ export default async function AdminSchoolsPage({
               <tr className="tracked-caps border-b border-white/10 text-muted">
                 <th className="py-2 pr-4 font-black">Name</th>
                 <th className="py-2 pr-4 font-black">Province</th>
+                <th className="py-2 pr-4 font-black">Contact</th>
                 <th className="py-2 font-black">Actions</th>
               </tr>
             </thead>
@@ -102,6 +130,17 @@ export default async function AdminSchoolsPage({
                 <tr key={school.id}>
                   <td className="py-3 pr-4 font-bold text-white">{school.name}</td>
                   <td className="py-3 pr-4 text-white/80">{school.province.name}</td>
+                  <td className="py-3 pr-4 text-white/80">
+                    {school.contactName || school.contactEmail || school.contactPhone ? (
+                      <div className="text-xs">
+                        {school.contactName && <p>{school.contactName}</p>}
+                        {school.contactPhone && <p className="text-muted">{school.contactPhone}</p>}
+                        {school.contactEmail && <p className="text-muted">{school.contactEmail}</p>}
+                      </div>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
                   <td className="py-3">
                     <div className="flex gap-3">
                       <Link
@@ -126,7 +165,7 @@ export default async function AdminSchoolsPage({
               ))}
               {schools.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-6 text-center text-muted">
+                  <td colSpan={4} className="py-6 text-center text-muted">
                     No schools/clubs yet.
                   </td>
                 </tr>

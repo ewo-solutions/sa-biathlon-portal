@@ -5,16 +5,7 @@ import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-
-function calculateAge(dateOfBirth: Date): number {
-  const now = new Date();
-  let age = now.getFullYear() - dateOfBirth.getFullYear();
-  const hasHadBirthdayThisYear =
-    now.getMonth() > dateOfBirth.getMonth() ||
-    (now.getMonth() === dateOfBirth.getMonth() && now.getDate() >= dateOfBirth.getDate());
-  if (!hasHadBirthdayThisYear) age -= 1;
-  return age;
-}
+import { resolveGroupId } from "@/lib/group-assignment";
 
 // Province code + running sequence, matching the legacy athlete numbering
 // scheme (e.g. "WC0007").
@@ -47,16 +38,12 @@ export async function registerAthlete(formData: FormData) {
   }
 
   const dateOfBirth = new Date(dateOfBirthInput);
-  const age = calculateAge(dateOfBirth);
-
-  const group = await prisma.group.findFirst({
-    where: {
-      ageStart: { lte: age },
-      ageEnd: { gte: age },
-      disabilityGroup: disability,
-      OR: [{ gender: null }, { gender }],
-    },
-    orderBy: { order: "asc" },
+  const province = await prisma.province.findUnique({ where: { id: provinceId } });
+  const groupId = await resolveGroupId(prisma, {
+    dateOfBirth,
+    gender: gender || null,
+    disability,
+    asOf: province?.ageDate ?? undefined,
   });
 
   const athleteNumber = await generateAthleteNumber(provinceId);
@@ -79,7 +66,7 @@ export async function registerAthlete(formData: FormData) {
           disability,
           provinceId,
           schoolId: schoolId || null,
-          groupId: group?.id,
+          groupId,
         },
       },
     },

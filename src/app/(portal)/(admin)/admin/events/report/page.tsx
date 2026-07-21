@@ -24,7 +24,10 @@ export default async function AdminCompetitionReportPage({
   if (!event) notFound();
 
   const registrations = await prisma.eventRegistration.findMany({
-    where: { eventId },
+    where: {
+      eventId,
+      user: { athleteProfile: { status: true } },
+    },
     include: {
       user: {
         include: { athleteProfile: { include: { school: true, province: true, group: true } } },
