@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { competitionTypeLabel } from "@/lib/competition-type";
 
 const PAGE_SIZE = 24;
 
@@ -71,6 +72,8 @@ export default async function AdminEventsPage({
                   month: "long",
                   year: "numeric",
                 })}
+                {competitionTypeLabel(event.competitionType) &&
+                  ` — ${competitionTypeLabel(event.competitionType)}`}
               </p>
               {event.description && (
                 <p className="mt-3 line-clamp-4 text-sm text-white/80">{event.description}</p>

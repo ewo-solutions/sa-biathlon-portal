@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PrintButton } from "@/components/ui/print-button";
+import { competitionTypeLabel } from "@/lib/competition-type";
 
 function formatSeconds(seconds: number | null) {
   if (seconds === null) return "—";
@@ -19,7 +20,7 @@ export default async function AdminCompetitionReportPage({
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    include: { hostProvince: true, season: true },
+    include: { hostProvince: true, season: true, sponsors: true },
   });
   if (!event) notFound();
 
@@ -81,10 +82,18 @@ export default async function AdminCompetitionReportPage({
             })}
             {event.hostProvince ? ` — ${event.hostProvince.name}` : ""}
             {event.season ? ` — ${event.season.label}` : ""}
+            {competitionTypeLabel(event.competitionType)
+              ? ` — ${competitionTypeLabel(event.competitionType)}`
+              : ""}
           </p>
           <p className="mt-1 text-sm text-white/70 print:text-black/70">
             {registrations.length} {registrations.length === 1 ? "entry" : "entries"}
           </p>
+          {event.sponsors.length > 0 && (
+            <p className="mt-1 text-sm text-white/70 print:text-black/70">
+              Sponsored by {event.sponsors.map((s) => s.name).join(", ")}
+            </p>
+          )}
         </div>
         <PrintButton />
       </div>
@@ -122,18 +131,22 @@ export default async function AdminCompetitionReportPage({
                       {registration.user.athleteProfile?.school?.name ?? "—"}
                     </td>
                     <td className="py-2 pr-3">
-                      {registration.runningDnf
-                        ? "DNF"
-                        : registration.runningFalseStart
-                          ? "False start"
-                          : formatSeconds(registration.runningTimeSeconds)}
+                      {registration.dns
+                        ? "DNS"
+                        : registration.runningDnf
+                          ? "DNF"
+                          : registration.runningFalseStart
+                            ? "False start"
+                            : formatSeconds(registration.runningTimeSeconds)}
                     </td>
                     <td className="py-2">
-                      {registration.swimmingDnf
-                        ? "DNF"
-                        : registration.swimmingFalseStart
-                          ? "False start"
-                          : formatSeconds(registration.swimmingTimeSeconds)}
+                      {registration.dns
+                        ? "DNS"
+                        : registration.swimmingDnf
+                          ? "DNF"
+                          : registration.swimmingFalseStart
+                            ? "False start"
+                            : formatSeconds(registration.swimmingTimeSeconds)}
                     </td>
                   </tr>
                 ))}

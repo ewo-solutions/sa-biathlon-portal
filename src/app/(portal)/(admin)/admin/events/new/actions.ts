@@ -20,6 +20,8 @@ export async function saveEvent(formData: FormData) {
   const registrationInfo = formData.get("registrationInfo") as string;
   const eventDate = new Date(formData.get("eventDate") as string);
   const registrationFee = formData.get("registrationFee") as string;
+  const competitionType = (formData.get("competitionType") as string) || null;
+  const sponsorIds = formData.getAll("sponsorIds") as string[];
 
   const data = {
     name,
@@ -29,14 +31,20 @@ export async function saveEvent(formData: FormData) {
     registrationInfo: registrationInfo || null,
     eventDate,
     registrationFee: registrationFee ? registrationFee : null,
-    createdById: session.user.id,
+    competitionType,
   };
+  const sponsorRefs = sponsorIds.map((id) => ({ id }));
 
   let event;
   if (eventId) {
-    event = await prisma.event.update({ where: { id: eventId }, data });
+    event = await prisma.event.update({
+      where: { id: eventId },
+      data: { ...data, sponsors: { set: sponsorRefs } },
+    });
   } else {
-    event = await prisma.event.create({ data });
+    event = await prisma.event.create({
+      data: { ...data, createdById: session.user.id, sponsors: { connect: sponsorRefs } },
+    });
   }
 
   revalidatePath("/admin/events");

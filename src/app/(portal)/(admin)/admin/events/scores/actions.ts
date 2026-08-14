@@ -113,3 +113,25 @@ export async function recordTime(
     message: `${athleteProfile.athleteNumber} — ${dnf ? "DNF" : timeInput} recorded`,
   };
 }
+
+// Toggles "Did Not Start" — registered for the competition but never
+// started either discipline, distinct from a per-discipline DNF. Excludes
+// the entry from ranking entirely (legacy CompetitionAthletes.Dns).
+export async function toggleDns(eventId: string, registrationId: string) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Not authorized");
+  }
+
+  const registration = await prisma.eventRegistration.findUniqueOrThrow({
+    where: { id: registrationId },
+  });
+
+  await prisma.eventRegistration.update({
+    where: { id: registrationId },
+    data: { dns: !registration.dns },
+  });
+
+  revalidatePath("/admin/events/scores");
+  revalidatePath("/admin/events/report");
+}

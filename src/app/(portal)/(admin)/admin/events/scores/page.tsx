@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { ScoreEntryForm } from "@/components/ui/score-entry-form";
-import { recordTime, searchAthletes } from "./actions";
+import { recordTime, searchAthletes, toggleDns } from "./actions";
 
 function formatSeconds(seconds: number | null) {
   if (seconds === null) return "—";
@@ -33,8 +33,8 @@ export default async function AdminScoreEntryPage({
 
   const entered = registrations.filter((r) =>
     discipline === "RUNNING"
-      ? r.runningTimeSeconds !== null || r.runningDnf
-      : r.swimmingTimeSeconds !== null || r.swimmingDnf,
+      ? r.runningTimeSeconds !== null || r.runningDnf || r.dns
+      : r.swimmingTimeSeconds !== null || r.swimmingDnf || r.dns,
   );
 
   const boundAction = recordTime.bind(null, eventId, discipline);
@@ -76,7 +76,8 @@ export default async function AdminScoreEntryPage({
               <tr className="tracked-caps border-b border-white/10 text-muted">
                 <th className="py-2 pr-4 font-black">SA No</th>
                 <th className="py-2 pr-4 font-black">Athlete</th>
-                <th className="py-2 font-black">Time</th>
+                <th className="py-2 pr-4 font-black">Time</th>
+                <th className="py-2 font-black">DNS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -88,20 +89,39 @@ export default async function AdminScoreEntryPage({
                   <td className="py-3 pr-4 text-white/80">
                     {registration.user.name} {registration.user.surname}
                   </td>
-                  <td className="py-3 text-white/80">
-                    {discipline === "RUNNING"
-                      ? registration.runningDnf
-                        ? "DNF"
-                        : formatSeconds(registration.runningTimeSeconds)
-                      : registration.swimmingDnf
-                        ? "DNF"
-                        : formatSeconds(registration.swimmingTimeSeconds)}
+                  <td className="py-3 pr-4 text-white/80">
+                    {registration.dns
+                      ? "—"
+                      : discipline === "RUNNING"
+                        ? registration.runningDnf
+                          ? "DNF"
+                          : formatSeconds(registration.runningTimeSeconds)
+                        : registration.swimmingDnf
+                          ? "DNF"
+                          : formatSeconds(registration.swimmingTimeSeconds)}
+                  </td>
+                  <td className="py-3">
+                    <form
+                      action={async () => {
+                        "use server";
+                        await toggleDns(eventId, registration.id);
+                      }}
+                    >
+                      <button
+                        type="submit"
+                        className={`text-xs font-bold hover:underline ${
+                          registration.dns ? "text-gold" : "text-white/50"
+                        }`}
+                      >
+                        {registration.dns ? "DNS ✓" : "Mark DNS"}
+                      </button>
+                    </form>
                   </td>
                 </tr>
               ))}
               {entered.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-6 text-center text-muted">
+                  <td colSpan={4} className="py-6 text-center text-muted">
                     No times recorded yet.
                   </td>
                 </tr>

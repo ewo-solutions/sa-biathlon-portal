@@ -176,16 +176,47 @@ model AthleteProfile {
   school              School?   @relation(fields: [schoolId], references: [id])
   groupId             String?
   group               Group?    @relation(fields: [groupId], references: [id])
-  personalBestSeconds Int?
+  // All-time best total points across every competition (legacy
+  // Athletes.PersonalBest) — confirmed by the Azure UpdateBestPoints
+  // stored procedure to be a POINTS total, not a time, despite the name.
+  // The previous personalBestSeconds field was a misread of this.
+  personalBestPoints  Decimal?  @db.Decimal(10, 2)
+  personalBestEventId String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
   results Result[]
   records CompetitionRecord[]
+  seasons AthleteSeason[]
 
   @@index([provinceId])
   @@index([schoolId])
   @@index([groupId])
+}
+
+// Per-athlete, per-season best points — mirrors the legacy AthleteSeasons
+// table, maintained by the Azure UpdateBestPoints stored procedure.
+// Populated once the scoring engine computes RunningPoints/SwimmingPoints;
+// the shape is in place now so that work can write directly into it.
+model AthleteSeason {
+  id               String         @id @default(cuid())
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  seasonId         String
+  season           Season         @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  seasonBestRunning         Decimal? @db.Decimal(10, 2)
+  seasonBestRunningEventId  String?
+  seasonBestSwimming        Decimal? @db.Decimal(10, 2)
+  seasonBestSwimmingEventId String?
+  seasonBestTotal           Decimal? @db.Decimal(10, 2)
+  seasonBestTotalEventId    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([athleteProfileId, seasonId])
+  @@index([seasonId])
 }
 
 // Yearly competition season (legacy Seasons table), referenced by
@@ -197,8 +228,9 @@ model Season {
   endDate   DateTime
   createdAt DateTime @default(now())
 
-  events      Event[]
-  memberships Membership[]
+  events         Event[]
+  memberships    Membership[]
+  athleteSeasons AthleteSeason[]
 }
 
 model Event {
@@ -235,8 +267,21 @@ model Event {
   results       Result[]
   heats         Heat[]
   records       CompetitionRecord[]
+  sponsors      Sponsor[]
 
   @@index([eventDate])
+}
+
+// A competition can have multiple sponsors linked (legacy Meeting form
+// "sponsors" section).
+model Sponsor {
+  id         String   @id @default(cuid())
+  name       String
+  websiteUrl String?
+  logoUrl    String?
+  createdAt  DateTime @default(now())
+
+  events Event[]
 }
 
 // Sign-up record for the "sign up" action on Upcoming Events cards — also
@@ -256,6 +301,11 @@ model EventRegistration {
   groupId    String?
   group      Group?   @relation(fields: [groupId], references: [id])
   disability Boolean?
+
+  // Registered but never started at all — distinct from a per-discipline
+  // DNF (started but didn't finish). Excludes the entry from ranking
+  // entirely (legacy CompetitionAthletes.Dns).
+  dns Boolean @default(false)
 
   // Manual score entry — filled in via the admin "Enter Run Times"/"Enter
   // Swim Times" screens.

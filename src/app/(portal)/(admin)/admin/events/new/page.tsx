@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { ProfilePictureForm } from "@/components/ui/profile-picture-form";
 import { saveEvent, uploadEventPicture } from "./actions";
+import { COMPETITION_TYPE_LABELS } from "@/lib/competition-type";
 
 const inputClass = "w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none";
 const labelClass = "mb-1 block text-sm text-white";
@@ -17,7 +18,13 @@ export default async function EditCreateEventPage({
   searchParams: Promise<{ eventId?: string }>;
 }) {
   const { eventId } = await searchParams;
-  const event = eventId ? await prisma.event.findUnique({ where: { id: eventId } }) : null;
+  const [event, sponsors] = await Promise.all([
+    eventId
+      ? prisma.event.findUnique({ where: { id: eventId }, include: { sponsors: true } })
+      : null,
+    prisma.sponsor.findMany({ orderBy: { name: "asc" } }),
+  ]);
+  const eventSponsorIds = new Set(event?.sponsors.map((s) => s.id) ?? []);
 
   return (
     <div>
@@ -112,6 +119,21 @@ export default async function EditCreateEventPage({
               />
             </div>
             <div>
+              <label className={labelClass}>Competition Type</label>
+              <select
+                name="competitionType"
+                defaultValue={event?.competitionType ?? ""}
+                className={inputClass}
+              >
+                <option value="">Not set</option>
+                {Object.entries(COMPETITION_TYPE_LABELS).map(([code, label]) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className={labelClass}>Entry Fee</label>
               <input
                 name="registrationFee"
@@ -122,6 +144,24 @@ export default async function EditCreateEventPage({
                 className={inputClass}
               />
             </div>
+            {sponsors.length > 0 && (
+              <div>
+                <label className={labelClass}>Sponsors</label>
+                <div className="max-h-40 space-y-2 overflow-y-auto bg-sage p-3">
+                  {sponsors.map((sponsor) => (
+                    <label key={sponsor.id} className="flex items-center gap-2 text-sm text-white">
+                      <input
+                        type="checkbox"
+                        name="sponsorIds"
+                        value={sponsor.id}
+                        defaultChecked={eventSponsorIds.has(sponsor.id)}
+                      />
+                      {sponsor.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <label className={labelClass}>Description/Notes</label>
               <textarea
