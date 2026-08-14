@@ -115,11 +115,19 @@ export default async function AdminCompetitionReportPage({
                   <th className="py-1 pr-3 font-black">Athlete</th>
                   <th className="py-1 pr-3 font-black">School / Club</th>
                   <th className="py-1 pr-3 font-black">Running</th>
-                  <th className="py-1 font-black">Swimming</th>
+                  <th className="py-1 pr-3 font-black">Swimming</th>
+                  <th className="py-1 font-black">Total Pts</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 print:divide-black/10">
-                {section.rows.map((registration) => (
+                {section.rows.map((registration) => {
+                  const totalPoints = registration.dns
+                    ? null
+                    : Number(registration.runningPoints ?? 0) +
+                      Number(registration.runningBonusPoints ?? 0) +
+                      Number(registration.swimmingPoints ?? 0) +
+                      Number(registration.swimmingBonusPoints ?? 0);
+                  return (
                   <tr key={registration.id}>
                     <td className="py-2 pr-3 font-bold">
                       {registration.user.athleteProfile?.athleteNumber ?? "—"}
@@ -139,7 +147,7 @@ export default async function AdminCompetitionReportPage({
                             ? "False start"
                             : formatSeconds(registration.runningTimeSeconds)}
                     </td>
-                    <td className="py-2">
+                    <td className="py-2 pr-3">
                       {registration.dns
                         ? "DNS"
                         : registration.swimmingDnf
@@ -148,8 +156,12 @@ export default async function AdminCompetitionReportPage({
                             ? "False start"
                             : formatSeconds(registration.swimmingTimeSeconds)}
                     </td>
+                    <td className="py-2 font-bold">
+                      {totalPoints === null ? "—" : totalPoints.toFixed(1)}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

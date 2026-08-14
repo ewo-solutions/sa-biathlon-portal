@@ -77,11 +77,19 @@ export default async function AdminScoreEntryPage({
                 <th className="py-2 pr-4 font-black">SA No</th>
                 <th className="py-2 pr-4 font-black">Athlete</th>
                 <th className="py-2 pr-4 font-black">Time</th>
+                <th className="py-2 pr-4 font-black">Points</th>
                 <th className="py-2 font-black">DNS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {entered.map((registration) => (
+              {entered.map((registration) => {
+                const points =
+                  discipline === "RUNNING" ? registration.runningPoints : registration.swimmingPoints;
+                const bonus =
+                  discipline === "RUNNING"
+                    ? registration.runningBonusPoints
+                    : registration.swimmingBonusPoints;
+                return (
                 <tr key={registration.id}>
                   <td className="py-3 pr-4 font-bold text-white">
                     {registration.user.athleteProfile?.athleteNumber ?? "—"}
@@ -99,6 +107,11 @@ export default async function AdminScoreEntryPage({
                         : registration.swimmingDnf
                           ? "DNF"
                           : formatSeconds(registration.swimmingTimeSeconds)}
+                  </td>
+                  <td className="py-3 pr-4 text-white/80">
+                    {points === null || registration.dns
+                      ? "—"
+                      : `${Number(points).toFixed(1)}${bonus ? ` +${Number(bonus).toFixed(1)}` : ""}`}
                   </td>
                   <td className="py-3">
                     <form
@@ -118,10 +131,11 @@ export default async function AdminScoreEntryPage({
                     </form>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {entered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-muted">
+                  <td colSpan={5} className="py-6 text-center text-muted">
                     No times recorded yet.
                   </td>
                 </tr>

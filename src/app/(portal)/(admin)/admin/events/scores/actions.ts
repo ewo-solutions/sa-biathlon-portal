@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import type { HeatDiscipline } from "@prisma/client";
+import { calculateBonusPoints, calculateRunningPoints, calculateSwimmingPoints } from "@/lib/scoring";
 
 export type ScoreEntryState = {
   status: "idle" | "success" | "error";
@@ -76,12 +77,16 @@ export async function recordTime(
     return { status: "error", message: "Enter an athlete number" };
   }
 
-  const athleteProfile = await prisma.athleteProfile.findUnique({
-    where: { athleteNumber },
-  });
+  const [athleteProfile, event] = await Promise.all([
+    prisma.athleteProfile.findUnique({ where: { athleteNumber } }),
+    prisma.event.findUnique({ where: { id: eventId }, include: { season: true } }),
+  ]);
 
   if (!athleteProfile) {
     return { status: "error", message: `No athlete found with number "${athleteNumber}"` };
+  }
+  if (!event) {
+    return { status: "error", message: "Event not found" };
   }
 
   const timeSeconds = dnf ? null : parseTimeToSeconds(timeInput);
@@ -91,26 +96,75 @@ export async function recordTime(
 
   const isRunning = discipline === "RUNNING";
 
+  // A per-competition group override (set on the registration itself) beats
+  // the athlete's default group, matching the legacy Athletes Detail tab.
+  const existing = await prisma.eventRegistration.findUnique({
+    where: { eventId_userId: { eventId, userId: athleteProfile.userId } },
+    select: { groupId: true },
+  });
+  const effectiveGroupId = existing?.groupId ?? athleteProfile.groupId;
+  const group = effectiveGroupId ? await prisma.group.findUnique({ where: { id: effectiveGroupId } }) : null;
+
+  let points: number | null = null;
+  let bonusPoints: number | null = null;
+  if (group) {
+    points = isRunning
+      ? calculateRunningPoints(group, timeSeconds, dnf)
+      : calculateSwimmingPoints(group, timeSeconds, dnf, event.poolSize, falseStart);
+    bonusPoints = calculateBonusPoints(group, athleteProfile.dateOfBirth, event.season?.endDate ?? null);
+  }
+
   await prisma.eventRegistration.upsert({
     where: { eventId_userId: { eventId, userId: athleteProfile.userId } },
     update: isRunning
-      ? { runningTimeSeconds: timeSeconds, runningDnf: dnf, runningFalseStart: falseStart }
-      : { swimmingTimeSeconds: timeSeconds, swimmingDnf: dnf, swimmingFalseStart: falseStart },
+      ? {
+          runningTimeSeconds: timeSeconds,
+          runningDnf: dnf,
+          runningFalseStart: falseStart,
+          runningPoints: points,
+          runningBonusPoints: bonusPoints,
+        }
+      : {
+          swimmingTimeSeconds: timeSeconds,
+          swimmingDnf: dnf,
+          swimmingFalseStart: falseStart,
+          swimmingPoints: points,
+          swimmingBonusPoints: bonusPoints,
+        },
     create: {
       eventId,
       userId: athleteProfile.userId,
       status: "ATTENDED",
       ...(isRunning
-        ? { runningTimeSeconds: timeSeconds, runningDnf: dnf, runningFalseStart: falseStart }
-        : { swimmingTimeSeconds: timeSeconds, swimmingDnf: dnf, swimmingFalseStart: falseStart }),
+        ? {
+            runningTimeSeconds: timeSeconds,
+            runningDnf: dnf,
+            runningFalseStart: falseStart,
+            runningPoints: points,
+            runningBonusPoints: bonusPoints,
+          }
+        : {
+            swimmingTimeSeconds: timeSeconds,
+            swimmingDnf: dnf,
+            swimmingFalseStart: falseStart,
+            swimmingPoints: points,
+            swimmingBonusPoints: bonusPoints,
+          }),
     },
   });
 
   revalidatePath("/admin/events/scores");
+  revalidatePath("/admin/events/report");
+
+  const pointsNote = group
+    ? points === null
+      ? " (group scoring not fully configured — no points calculated)"
+      : ` — ${points.toFixed(1)} points`
+    : " (no group assigned — no points calculated)";
 
   return {
     status: "success",
-    message: `${athleteProfile.athleteNumber} — ${dnf ? "DNF" : timeInput} recorded`,
+    message: `${athleteProfile.athleteNumber} — ${dnf ? "DNF" : timeInput} recorded${pointsNote}`,
   };
 }
 
