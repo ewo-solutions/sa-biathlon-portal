@@ -11,6 +11,8 @@ const labelClass = "mb-1 block text-sm text-white";
 const errorMessages: Record<string, string> = {
   missing: "Please fill in all required fields.",
   exists: "An account with that email already exists.",
+  invalidId: "That doesn't look like a valid 13-digit SA ID number.",
+  idClaimed: "An account already exists for that ID number — log in instead.",
 };
 
 export default async function RegisterPage({
@@ -73,24 +75,21 @@ export default async function RegisterPage({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className={labelClass}>Date of birth</label>
-              <input name="dateOfBirth" type="date" required className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Gender</label>
-              <select name="gender" required className={inputClass}>
-                <option value="">Select…</option>
-                <option value="MALE">Male</option>
-                <option value="FEMALE">Female</option>
-              </select>
-            </div>
-          </div>
-
           <div>
             <label className={labelClass}>SA ID number</label>
-            <input name="idNumber" className={inputClass} />
+            <input
+              name="idNumber"
+              required
+              inputMode="numeric"
+              pattern="\d{13}"
+              maxLength={13}
+              placeholder="13 digits, no spaces"
+              className={inputClass}
+            />
+            <p className="mt-1 text-xs text-white/60">
+              Your date of birth and gender are read directly from your ID number — if you already
+              have an SA Biathlon athlete number, this links your account to it automatically.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

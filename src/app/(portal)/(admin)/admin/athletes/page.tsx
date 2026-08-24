@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
+import { isShadowEmail } from "@/lib/shadow-account";
 
 const PAGE_SIZE = 50;
-const PLACEHOLDER_EMAIL_DOMAIN = "@imported.sabiathlon.local";
 
 function displayEmail(contactEmail: string | null | undefined, loginEmail: string) {
   if (contactEmail) return contactEmail;
-  if (loginEmail.endsWith(PLACEHOLDER_EMAIL_DOMAIN)) return "—";
+  if (isShadowEmail(loginEmail)) return "—";
   return loginEmail;
 }
 

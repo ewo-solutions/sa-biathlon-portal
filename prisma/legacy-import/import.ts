@@ -188,3 +188,42 @@ export async function importLegacyReferenceData(prisma: PrismaClient) {
     `Legacy import: ${provinces.length} provinces, ${seasons.length} seasons, ${schools.length} schools, ${groups.length} groups`,
   );
 }
+
+// Seeds Province.nextAthleteSeq from the highest athlete number already in
+// use per province, so newly-registered athletes' numbers never collide
+// with imported history. Only ever advances the counter (never regresses
+// it), so this is safe and cheap to run on every deploy — must run after
+// importLegacyAthletes, since it depends on AthleteProfile.athleteNumber.
+export async function backfillProvinceAthleteCounters(prisma: PrismaClient) {
+  const provinces = await prisma.province.findMany({
+    select: { id: true, abbreviation: true, nextAthleteSeq: true },
+  });
+
+  let advanced = 0;
+  for (const province of provinces) {
+    const athletes = await prisma.athleteProfile.findMany({
+      where: { athleteNumber: { startsWith: province.abbreviation } },
+      select: { athleteNumber: true },
+    });
+
+    let max = 0;
+    for (const a of athletes) {
+      const suffix = a.athleteNumber?.slice(province.abbreviation.length) ?? "";
+      const n = /^\d+$/.test(suffix) ? Number(suffix) : NaN;
+      if (!Number.isNaN(n) && n > max) max = n;
+    }
+
+    const desiredNext = max + 1;
+    if (desiredNext > province.nextAthleteSeq) {
+      await prisma.province.update({
+        where: { id: province.id },
+        data: { nextAthleteSeq: desiredNext },
+      });
+      advanced += 1;
+    }
+  }
+
+  if (advanced > 0) {
+    console.log(`Legacy import: advanced athlete-number counters for ${advanced} province(s)`);
+  }
+}

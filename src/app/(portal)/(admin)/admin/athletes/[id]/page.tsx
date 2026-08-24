@@ -126,6 +126,22 @@ export default async function AdminAthleteDetailPage({
                   className={inputClass}
                 />
               </div>
+              <div>
+                <label className={labelClass}>SA ID number</label>
+                <input
+                  name="idNumber"
+                  defaultValue={athlete.athleteProfile?.idNumber ?? ""}
+                  inputMode="numeric"
+                  maxLength={13}
+                  placeholder="13 digits — drives DOB/gender below"
+                  className={inputClass}
+                />
+                <p className="mt-1 text-xs text-muted">
+                  When this is a valid 13-digit SA ID, date of birth and gender are derived from it
+                  automatically and the fields below are ignored. Leave blank and fill those in
+                  manually for athletes without an SA ID.
+                </p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelClass}>Date of birth</label>

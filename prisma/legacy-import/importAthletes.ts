@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import aspNetUsersData from "./aspnetusers.json";
 import athletesData from "./athletes.json";
+import { PLACEHOLDER_EMAIL_DOMAIN } from "../../src/lib/shadow-account";
 
 type LegacyAspNetUser = {
   Id: string;
@@ -48,11 +49,28 @@ function orNull(id: string | null | undefined): string | null {
   return id && id !== NULL_GUID ? id : null;
 }
 
+// A handful of legacy rows share the same SA ID number under two different
+// AthleteNumbers (genuine duplicate registrations from the old system, not
+// an import error — same name/DOB, different number). idNumber is now
+// unique, so the second-seen row keeps everything except idNumber (nulled,
+// logged) rather than failing the whole import or silently dropping a row.
+const seenIdNumbers = new Set<string>();
+
 function athleteProfileFields(athlete: LegacyAthlete) {
+  const trimmedId = athlete.IdentityNumber?.trim() || null;
+  let idNumber = trimmedId;
+  if (trimmedId) {
+    if (seenIdNumbers.has(trimmedId)) {
+      idNumber = null;
+    } else {
+      seenIdNumbers.add(trimmedId);
+    }
+  }
+
   return {
     athleteNumber: athlete.AthleteNumber,
     dateOfBirth: new Date(athlete.DateOfBirth),
-    idNumber: athlete.IdentityNumber,
+    idNumber,
     gender: normalizeGender(athlete.Gender),
     disability: parseLegacyBool(athlete.Disability),
     status: parseLegacyBool(athlete.Status),
@@ -125,7 +143,7 @@ export async function importLegacyAthletes(prisma: PrismaClient) {
   await prisma.user.createMany({
     data: newShadowAthletes.map((a) => ({
       id: a.Id,
-      email: `athlete-${a.AthleteNumber}@imported.sabiathlon.local`,
+      email: `athlete-${a.AthleteNumber}${PLACEHOLDER_EMAIL_DOMAIN}`,
       passwordHash: placeholderHash,
       role: "ATHLETE" as const,
       name: a.FirstName || "Unknown",

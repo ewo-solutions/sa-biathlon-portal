@@ -69,20 +69,25 @@ model User {
 // Province governing body — the top of the club/athlete hierarchy carried
 // over from the legacy Azure schema (Provinces table).
 model Province {
-  id           String    @id @default(cuid())
-  name         String
-  abbreviation String    @unique
-  description  String?
-  addressLine1 String?
-  addressLine2 String?
-  addressLine3 String?
-  postalCode   String?
-  contactName  String?
-  contactPhone String?
-  contactEmail String?
-  ageDate      DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  name           String
+  abbreviation   String    @unique
+  description    String?
+  addressLine1   String?
+  addressLine2   String?
+  addressLine3   String?
+  postalCode     String?
+  contactName    String?
+  contactPhone   String?
+  contactEmail   String?
+  ageDate        DateTime?
+  // Next sequence number to hand out for this province's athlete numbering
+  // scheme (e.g. "WC0007"). A persistent counter, not a live COUNT() — the
+  // legacy system requires numbers to stay unique and never be reused, even
+  // as athletes move to other provinces or profiles are edited/deleted.
+  nextAthleteSeq Int       @default(1)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   schools            School[]
   athletes           AthleteProfile[]
@@ -159,7 +164,11 @@ model AthleteProfile {
   user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   athleteNumber       String?   @unique
   dateOfBirth         DateTime?
-  idNumber            String?
+  // SA ID number — the source of truth for DOB and gender (both are derived
+  // from it, see src/lib/sa-id.ts) and the key used to match a newly
+  // registering athlete against an existing/imported profile so they keep
+  // their lifetime SA Biathlon number and history instead of duplicating.
+  idNumber            String?   @unique
   gender              String?
   disability          Boolean   @default(false)
   status              Boolean   @default(true)

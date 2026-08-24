@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { fileToDataUri } from "@/lib/uploads";
 import { resolveGroupId } from "@/lib/group-assignment";
+import { parseSaIdNumber } from "@/lib/sa-id";
 
 async function requireAdmin() {
   const session = await auth();
@@ -24,11 +25,29 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
   const contactEmail = (formData.get("contactEmail") as string)?.trim();
   const provinceId = (formData.get("provinceId") as string) || null;
   const schoolId = (formData.get("schoolId") as string) || null;
+  const idNumberInput = (formData.get("idNumber") as string)?.trim().replace(/\s/g, "");
+  const idNumber = idNumberInput || null;
   const dateOfBirthInput = formData.get("dateOfBirth") as string;
-  const gender = (formData.get("gender") as string) || null;
+  const manualGender = (formData.get("gender") as string) || null;
   const disability = formData.get("disability") === "on";
 
-  const dateOfBirth = dateOfBirthInput ? new Date(dateOfBirthInput) : null;
+  // ID number drives date of birth/gender when it parses; otherwise fall
+  // back to the manual fields (some legacy/foreign athletes don't have a
+  // standard SA ID).
+  const parsedId = idNumber ? parseSaIdNumber(idNumber) : null;
+  const dateOfBirth = parsedId?.dateOfBirth ?? (dateOfBirthInput ? new Date(dateOfBirthInput) : null);
+  const gender = parsedId?.gender ?? manualGender;
+
+  if (idNumber) {
+    const conflict = await prisma.athleteProfile.findUnique({
+      where: { idNumber },
+      select: { userId: true },
+    });
+    if (conflict && conflict.userId !== athleteId) {
+      throw new Error(`ID number ${idNumber} is already linked to a different athlete profile.`);
+    }
+  }
+
   const province = provinceId ? await prisma.province.findUnique({ where: { id: provinceId } }) : null;
   const groupId = await resolveGroupId(prisma, {
     dateOfBirth,
@@ -40,6 +59,7 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
   const profileFields = {
     athleteNumber: athleteNumber || null,
     contactEmail: contactEmail || null,
+    idNumber,
     provinceId,
     schoolId,
     dateOfBirth,
