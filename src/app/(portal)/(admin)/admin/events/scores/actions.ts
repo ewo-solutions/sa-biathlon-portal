@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import type { HeatDiscipline } from "@prisma/client";
 import { calculateBonusPoints, calculateRunningPoints, calculateSwimmingPoints } from "@/lib/scoring";
+import { parseTimeToSeconds } from "@/lib/time-format";
 
 export type ScoreEntryState = {
   status: "idle" | "success" | "error";
@@ -38,23 +39,6 @@ export async function searchAthletes(query: string): Promise<AthleteSearchResult
     athleteNumber: a.athleteNumber as string,
     name: `${a.user.name} ${a.user.surname}`,
   }));
-}
-
-// Accepts "ss", "mm:ss", or "h:mm:ss" (fractional seconds allowed) and
-// returns whole seconds. Matches the legacy "Enter Run/Swim Times" forms,
-// which took a single time text box per athlete.
-function parseTimeToSeconds(input: string): number | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-
-  const parts = trimmed.split(":").map((part) => Number(part));
-  if (parts.some((part) => Number.isNaN(part))) return null;
-
-  let seconds = 0;
-  for (const part of parts) {
-    seconds = seconds * 60 + part;
-  }
-  return Math.round(seconds);
 }
 
 export async function recordTime(
@@ -91,7 +75,7 @@ export async function recordTime(
 
   const timeSeconds = dnf ? null : parseTimeToSeconds(timeInput);
   if (!dnf && timeInput && timeSeconds === null) {
-    return { status: "error", message: `Could not read time "${timeInput}" — use mm:ss` };
+    return { status: "error", message: `Could not read time "${timeInput}" — use mm:ss.ss` };
   }
 
   const isRunning = discipline === "RUNNING";

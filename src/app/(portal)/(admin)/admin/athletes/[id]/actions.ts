@@ -25,18 +25,33 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
   const contactEmail = (formData.get("contactEmail") as string)?.trim();
   const provinceId = (formData.get("provinceId") as string) || null;
   const schoolId = (formData.get("schoolId") as string) || null;
+  const isSaCitizen = formData.get("isSaCitizen") !== "false";
   const idNumberInput = (formData.get("idNumber") as string)?.trim().replace(/\s/g, "");
-  const idNumber = idNumberInput || null;
-  const dateOfBirthInput = formData.get("dateOfBirth") as string;
-  const manualGender = (formData.get("gender") as string) || null;
   const disability = formData.get("disability") === "on";
+  const addressLine1 = (formData.get("addressLine1") as string) || null;
+  const addressLine2 = (formData.get("addressLine2") as string) || null;
+  const addressLine3 = (formData.get("addressLine3") as string) || null;
+  const postalCode = (formData.get("postalCode") as string) || null;
 
-  // ID number drives date of birth/gender when it parses; otherwise fall
-  // back to the manual fields (some legacy/foreign athletes don't have a
-  // standard SA ID).
-  const parsedId = idNumber ? parseSaIdNumber(idNumber) : null;
-  const dateOfBirth = parsedId?.dateOfBirth ?? (dateOfBirthInput ? new Date(dateOfBirthInput) : null);
-  const gender = parsedId?.gender ?? manualGender;
+  let dateOfBirth: Date | null = null;
+  let gender: string | null = null;
+  let idNumber: string | null = null;
+
+  if (isSaCitizen) {
+    idNumber = idNumberInput || null;
+    // ID number drives date of birth/gender when it parses; otherwise fall
+    // back to whatever manual fields were also submitted.
+    const parsedId = idNumber ? parseSaIdNumber(idNumber) : null;
+    const dateOfBirthInput = formData.get("dateOfBirth") as string;
+    const manualGender = (formData.get("gender") as string) || null;
+    dateOfBirth = parsedId?.dateOfBirth ?? (dateOfBirthInput ? new Date(dateOfBirthInput) : null);
+    gender = parsedId?.gender ?? manualGender;
+  } else {
+    const dateOfBirthInput = formData.get("dateOfBirth") as string;
+    gender = (formData.get("gender") as string) || null;
+    dateOfBirth = dateOfBirthInput ? new Date(dateOfBirthInput) : null;
+    idNumber = null;
+  }
 
   if (idNumber) {
     const conflict = await prisma.athleteProfile.findUnique({
@@ -59,6 +74,7 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
   const profileFields = {
     athleteNumber: athleteNumber || null,
     contactEmail: contactEmail || null,
+    isSaCitizen,
     idNumber,
     provinceId,
     schoolId,
@@ -66,6 +82,10 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
     gender,
     disability,
     groupId,
+    addressLine1,
+    addressLine2,
+    addressLine3,
+    postalCode,
   };
 
   await prisma.user.update({

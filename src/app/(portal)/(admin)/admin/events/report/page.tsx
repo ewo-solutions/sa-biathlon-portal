@@ -2,13 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PrintButton } from "@/components/ui/print-button";
 import { competitionTypeLabel } from "@/lib/competition-type";
-
-function formatSeconds(seconds: number | null) {
-  if (seconds === null) return "—";
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return m > 0 ? `${m}:${s.toString().padStart(2, "0")}` : `${s}`;
-}
+import { formatSeconds } from "@/lib/time-format";
 
 export default async function AdminCompetitionReportPage({
   searchParams,

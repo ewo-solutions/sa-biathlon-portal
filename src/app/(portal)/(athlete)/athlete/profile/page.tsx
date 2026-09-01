@@ -3,19 +3,28 @@ import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { EventThumbList } from "@/components/ui/event-thumb-list";
 import { ProfilePictureForm } from "@/components/ui/profile-picture-form";
+import { ConfirmOnChangeForm } from "@/components/ui/confirm-on-change-form";
+import { CitizenshipFields } from "@/components/ui/citizenship-fields";
+import { getCurrentAgeGroup } from "@/lib/current-age-group";
 import { updateProfile, uploadProfilePicture } from "./actions";
 
 const inputClass = "w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none";
+const readOnlyClass =
+  "w-full cursor-not-allowed bg-panel-alt px-4 py-3.5 text-sm text-white/70 outline-none";
 const labelClass = "mb-1 block text-sm text-white";
+const required = <span className="text-red-400">*</span>;
 
 export default async function AthleteProfilePage() {
   const session = await auth();
   const userId = session!.user.id;
 
-  const [user, membership, registrations] = await Promise.all([
-    prisma.user.findUniqueOrThrow({ where: { id: userId }, include: { athleteProfile: true } }),
+  const [user, membership, registrations, schools] = await Promise.all([
+    prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { athleteProfile: { include: { province: true, school: true } } },
+    }),
     prisma.membership.findFirst({
-      where: { userId, status: "ACTIVE" },
+      where: { userId, status: "ACTIVE", expiresAt: { gte: new Date() } },
       orderBy: { expiresAt: "desc" },
     }),
     prisma.eventRegistration.findMany({
@@ -24,7 +33,17 @@ export default async function AthleteProfilePage() {
       orderBy: { event: { eventDate: "desc" } },
       take: 6,
     }),
+    prisma.school.findMany({ orderBy: { name: "asc" } }),
   ]);
+
+  const profile = user.athleteProfile;
+  const isSaCitizen = profile?.isSaCitizen ?? true;
+
+  const currentAgeGroup = await getCurrentAgeGroup(prisma, {
+    dateOfBirth: profile?.dateOfBirth ?? null,
+    gender: profile?.gender ?? null,
+    disability: profile?.disability ?? false,
+  });
 
   const now = new Date();
   const upcoming = registrations.filter((r) => r.event.eventDate >= now);
@@ -34,9 +53,9 @@ export default async function AthleteProfilePage() {
     <div>
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <h1 className="tracked-caps text-2xl font-black text-white">My Profile</h1>
-        {user.athleteProfile?.athleteNumber && (
+        {profile?.athleteNumber && (
           <span className="tracked-caps bg-gold px-3 py-1 text-xs font-black text-panel-alt">
-            SA No {user.athleteProfile.athleteNumber}
+            SA No {profile.athleteNumber}
           </span>
         )}
       </div>
@@ -60,13 +79,19 @@ export default async function AthleteProfilePage() {
 
         <div className="space-y-6">
           <Card title="Personal information">
-            <form action={updateProfile} className="space-y-4">
+            <ConfirmOnChangeForm
+              action={updateProfile}
+              className="space-y-4"
+              watchField="idNumber"
+              originalValue={profile?.idNumber ?? ""}
+              confirmMessage="Are you sure you want to change your ID number? Your date of birth and gender will be recalculated from the new number."
+            >
               <div>
-                <label className={labelClass}>Name</label>
+                <label className={labelClass}>Name {required}</label>
                 <input name="name" defaultValue={user.name} className={inputClass} required />
               </div>
               <div>
-                <label className={labelClass}>Surname</label>
+                <label className={labelClass}>Surname {required}</label>
                 <input name="surname" defaultValue={user.surname} className={inputClass} required />
               </div>
               <div>
@@ -78,7 +103,7 @@ export default async function AthleteProfilePage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Email</label>
+                <label className={labelClass}>Login email {required}</label>
                 <input
                   name="email"
                   type="email"
@@ -88,16 +113,113 @@ export default async function AthleteProfilePage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Province</label>
-                <input name="province" defaultValue={user.province ?? ""} className={inputClass} />
+                <label className={labelClass}>Contact email</label>
+                <input
+                  name="contactEmail"
+                  type="email"
+                  defaultValue={profile?.contactEmail ?? ""}
+                  placeholder="Your (or a parent/guardian) email, if different from login"
+                  className={inputClass}
+                />
               </div>
+
+              <CitizenshipFields
+                defaultIsSaCitizen={isSaCitizen}
+                defaultIdNumber={profile?.idNumber ?? ""}
+                defaultDateOfBirth={
+                  profile?.dateOfBirth ? profile.dateOfBirth.toISOString().slice(0, 10) : ""
+                }
+                defaultGender={profile?.gender ?? ""}
+                idRequired={false}
+              />
+
+              <label className="flex items-center gap-2 text-sm text-white">
+                <input
+                  type="checkbox"
+                  name="disability"
+                  defaultChecked={profile?.disability ?? false}
+                />
+                Disability
+              </label>
+
+              <p className="text-xs text-muted">
+                {currentAgeGroup.season ? (
+                  <>
+                    Current Season {currentAgeGroup.season.label} Age Group:{" "}
+                    <span className="text-white">{currentAgeGroup.group?.name ?? "Not yet assigned"}</span>
+                  </>
+                ) : (
+                  "Age group not available — no active season configured."
+                )}
+              </p>
+
+              <div>
+                <label className={labelClass}>Province</label>
+                <input
+                  value={profile?.province?.name ?? "Not set"}
+                  readOnly
+                  className={readOnlyClass}
+                />
+                <p className="mt-1 text-xs text-muted">
+                  Province can only be changed by an administrator.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>School / Club</label>
+                <select
+                  name="schoolId"
+                  defaultValue={profile?.schoolId ?? ""}
+                  className={inputClass}
+                >
+                  <option value="">Not set</option>
+                  {schools.map((school) => (
+                    <option key={school.id} value={school.id}>
+                      {school.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className={labelClass}>Address</label>
+                <div className="space-y-2">
+                  <input
+                    name="addressLine1"
+                    placeholder="Address line 1"
+                    defaultValue={profile?.addressLine1 ?? ""}
+                    className={inputClass}
+                  />
+                  <input
+                    name="addressLine2"
+                    placeholder="Address line 2"
+                    defaultValue={profile?.addressLine2 ?? ""}
+                    className={inputClass}
+                  />
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <input
+                      name="addressLine3"
+                      placeholder="Town / City"
+                      defaultValue={profile?.addressLine3 ?? ""}
+                      className={inputClass}
+                    />
+                    <input
+                      name="postalCode"
+                      placeholder="Postal code"
+                      defaultValue={profile?.postalCode ?? ""}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 className="tracked-caps bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
               >
                 Save changes
               </button>
-            </form>
+            </ConfirmOnChangeForm>
           </Card>
 
           <Card title="Membership information">

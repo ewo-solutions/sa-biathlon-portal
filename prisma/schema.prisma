@@ -169,6 +169,10 @@ model AthleteProfile {
   // registering athlete against an existing/imported profile so they keep
   // their lifetime SA Biathlon number and history instead of duplicating.
   idNumber            String?   @unique
+  // False for athletes without an SA ID (foreign nationals) — DOB/gender are
+  // then entered manually instead of derived from idNumber, which is not
+  // required in that case.
+  isSaCitizen         Boolean   @default(true)
   gender              String?
   disability          Boolean   @default(false)
   status              Boolean   @default(true)
@@ -179,6 +183,10 @@ model AthleteProfile {
   // User.email, which is the login and may be a synthetic placeholder for
   // imported athletes that never had a website account.
   contactEmail        String?
+  addressLine1        String?
+  addressLine2        String?
+  addressLine3        String?
+  postalCode          String?
   provinceId          String?
   province            Province? @relation(fields: [provinceId], references: [id])
   schoolId            String?
@@ -317,13 +325,15 @@ model EventRegistration {
   dns Boolean @default(false)
 
   // Manual score entry — filled in via the admin "Enter Run Times"/"Enter
-  // Swim Times" screens.
-  runningTimeSeconds  Int?
+  // Swim Times" screens. Decimal, not Int: the legacy system captures times
+  // to hundredths of a second (e.g. 5:27.20) and the points formula is
+  // sensitive to fractional seconds (5pts/sec running, 10pts/sec swimming).
+  runningTimeSeconds  Decimal? @db.Decimal(7, 2)
   runningDnf          Boolean  @default(false)
   runningFalseStart   Boolean  @default(false)
   runningPoints       Decimal? @db.Decimal(10, 2)
   runningBonusPoints  Decimal? @db.Decimal(10, 2)
-  swimmingTimeSeconds Int?
+  swimmingTimeSeconds Decimal? @db.Decimal(7, 2)
   swimmingDnf         Boolean  @default(false)
   swimmingFalseStart  Boolean  @default(false)
   swimmingPoints      Decimal? @db.Decimal(10, 2)

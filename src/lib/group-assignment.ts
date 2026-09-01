@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { getCurrentAgeGroup } from "./current-age-group";
 
 export function calculateAge(dateOfBirth: Date, asOf: Date = new Date()): number {
   let age = asOf.getFullYear() - dateOfBirth.getFullYear();
@@ -9,8 +10,10 @@ export function calculateAge(dateOfBirth: Date, asOf: Date = new Date()): number
   return age;
 }
 
-// Mirrors the legacy Groups form: an athlete's age (as of the province's
-// "age date", or today if unset) plus gender/disability decides the group.
+// Assigns a group by age/gender/disability. Without an explicit `asOf`
+// (e.g. a province's configured age-date override), this defaults to the
+// season-based calculation confirmed by the legacy source code — age in
+// the year the current season ends — not literal calendar age today.
 export async function resolveGroupId(
   prisma: PrismaClient,
   params: {
@@ -21,6 +24,11 @@ export async function resolveGroupId(
   },
 ): Promise<string | null> {
   if (!params.dateOfBirth) return null;
+
+  if (!params.asOf) {
+    const { group } = await getCurrentAgeGroup(prisma, params);
+    return group?.id ?? null;
+  }
 
   const age = calculateAge(params.dateOfBirth, params.asOf);
 

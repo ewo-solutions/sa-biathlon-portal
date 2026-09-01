@@ -16,24 +16,50 @@ export async function registerAthlete(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const cellphone = formData.get("cellphone") as string;
-  const idNumber = (formData.get("idNumber") as string)?.replace(/\s/g, "");
+  const isSaCitizen = formData.get("isSaCitizen") !== "false";
+  const idNumberInput = (formData.get("idNumber") as string)?.replace(/\s/g, "");
   const provinceId = formData.get("provinceId") as string;
   const schoolId = formData.get("schoolId") as string;
   const disability = formData.get("disability") === "on";
+  const addressLine1 = (formData.get("addressLine1") as string) || null;
+  const addressLine2 = (formData.get("addressLine2") as string) || null;
+  const addressLine3 = (formData.get("addressLine3") as string) || null;
+  const postalCode = (formData.get("postalCode") as string) || null;
 
-  if (!name || !surname || !email || !password || !idNumber || !provinceId) {
+  if (!name || !surname || !email || !password || !provinceId) {
     redirect("/register?error=missing");
   }
 
-  // ID-number-driven profile: date of birth and gender are derived from the
-  // SA ID number itself, not entered separately, so they can't drift from
-  // it. Required — it's also the key used to match against an existing
-  // (e.g. imported) profile below.
-  const parsedId = parseSaIdNumber(idNumber);
-  if (!parsedId) {
-    redirect("/register?error=invalidId");
+  let dateOfBirth: Date;
+  let gender: string | null;
+  let idNumber: string | null = null;
+
+  if (isSaCitizen) {
+    // ID-number-driven profile: date of birth and gender are derived from
+    // the SA ID number itself, not entered separately, so they can't drift
+    // from it. It's also the key used to match against an existing (e.g.
+    // imported) profile below.
+    if (!idNumberInput) {
+      redirect("/register?error=missing");
+    }
+    const parsedId = parseSaIdNumber(idNumberInput);
+    if (!parsedId) {
+      redirect("/register?error=invalidId");
+    }
+    dateOfBirth = parsedId.dateOfBirth;
+    gender = parsedId.gender;
+    idNumber = idNumberInput;
+  } else {
+    // Non-SA citizens don't have an SA ID — DOB and gender are entered
+    // manually, and there's no ID number to match/claim against.
+    const dobInput = formData.get("dateOfBirth") as string;
+    const genderInput = formData.get("gender") as string;
+    if (!dobInput || !genderInput) {
+      redirect("/register?error=missing");
+    }
+    dateOfBirth = new Date(dobInput);
+    gender = genderInput;
   }
-  const { dateOfBirth, gender } = parsedId;
 
   const existingEmail = await prisma.user.findUnique({ where: { email } });
   if (existingEmail) {
@@ -50,14 +76,27 @@ export async function registerAthlete(formData: FormData) {
 
   const passwordHash = await bcrypt.hash(password, 10);
 
+  const profileFields = {
+    dateOfBirth,
+    gender,
+    disability,
+    isSaCitizen,
+    provinceId,
+    schoolId: schoolId || null,
+    groupId,
+    addressLine1,
+    addressLine2,
+    addressLine3,
+    postalCode,
+  };
+
   // Does this ID number already exist — e.g. an athlete imported from the
   // legacy system who never had a website login? If so, claim that profile
   // (keep its lifetime SA Biathlon number and history) instead of creating
-  // a duplicate.
-  const existingProfile = await prisma.athleteProfile.findUnique({
-    where: { idNumber },
-    include: { user: true },
-  });
+  // a duplicate. Non-SA registrations (no idNumber) always create fresh.
+  const existingProfile = idNumber
+    ? await prisma.athleteProfile.findUnique({ where: { idNumber }, include: { user: true } })
+    : null;
 
   if (existingProfile) {
     if (!isShadowEmail(existingProfile.user.email)) {
@@ -77,16 +116,9 @@ export async function registerAthlete(formData: FormData) {
     });
     await prisma.athleteProfile.update({
       where: { id: existingProfile.id },
-      data: {
-        dateOfBirth,
-        gender,
-        disability,
-        provinceId,
-        schoolId: schoolId || null,
-        groupId,
-        // athleteNumber and idNumber are untouched — this is the whole
-        // point of claiming rather than creating a new profile.
-      },
+      data: profileFields,
+      // athleteNumber and idNumber are untouched — this is the whole point
+      // of claiming rather than creating a new profile.
     });
   } else {
     const athleteNumber = await generateAthleteNumber(prisma, provinceId);
@@ -100,16 +132,7 @@ export async function registerAthlete(formData: FormData) {
         role: "ATHLETE",
         cellphone: cellphone || null,
         athleteProfile: {
-          create: {
-            athleteNumber,
-            dateOfBirth,
-            idNumber,
-            gender,
-            disability,
-            provinceId,
-            schoolId: schoolId || null,
-            groupId,
-          },
+          create: { athleteNumber, idNumber, ...profileFields },
         },
       },
     });

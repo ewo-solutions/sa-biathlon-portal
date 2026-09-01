@@ -5,6 +5,8 @@ import { isShadowEmail } from "@/lib/shadow-account";
 
 const PAGE_SIZE = 50;
 
+type SortKey = "surname" | "province" | "school";
+
 function displayEmail(contactEmail: string | null | undefined, loginEmail: string) {
   if (contactEmail) return contactEmail;
   if (isShadowEmail(loginEmail)) return "—";
@@ -14,10 +16,11 @@ function displayEmail(contactEmail: string | null | undefined, loginEmail: strin
 export default async function AdminAthletesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; sort?: string }>;
 }) {
-  const { q, page: pageParam } = await searchParams;
+  const { q, page: pageParam, sort: sortParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
+  const sort: SortKey = sortParam === "province" || sortParam === "school" ? sortParam : "surname";
 
   const where = q
     ? {
@@ -31,10 +34,17 @@ export default async function AdminAthletesPage({
       }
     : { role: "ATHLETE" as const };
 
+  const orderBy =
+    sort === "province"
+      ? { athleteProfile: { province: { name: "asc" as const } } }
+      : sort === "school"
+        ? { athleteProfile: { school: { name: "asc" as const } } }
+        : { surname: "asc" as const };
+
   const [athletes, total] = await Promise.all([
     prisma.user.findMany({
       where,
-      orderBy: { surname: "asc" },
+      orderBy,
       include: {
         memberships: {
           where: { status: "ACTIVE", expiresAt: { gte: new Date() } },
@@ -50,14 +60,34 @@ export default async function AdminAthletesPage({
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const pageLink = (p: number) =>
-    `/admin/athletes?${new URLSearchParams({ ...(q ? { q } : {}), page: String(p) })}`;
+  const buildLink = (overrides: { page?: number; sort?: SortKey }) =>
+    `/admin/athletes?${new URLSearchParams({
+      ...(q ? { q } : {}),
+      page: String(overrides.page ?? page),
+      sort: overrides.sort ?? sort,
+    })}`;
+  const pageLink = (p: number) => buildLink({ page: p });
+
+  const sortHeader = (key: SortKey, label: string) => (
+    <Link href={buildLink({ page: 1, sort: key })} className="hover:underline">
+      {label}
+      {sort === key && " ↓"}
+    </Link>
+  );
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 className="tracked-caps text-2xl font-black text-white">Athletes Profiles</h1>
-        <p className="text-sm text-muted">{total.toLocaleString()} athletes</p>
+        <div className="flex items-center gap-4">
+          <a
+            href={`/admin/athletes/export?${new URLSearchParams({ ...(q ? { q } : {}), sort })}`}
+            className="tracked-caps bg-panel-alt px-4 py-2 text-xs font-black text-white transition hover:bg-sage/60"
+          >
+            Export CSV
+          </a>
+          <p className="text-sm text-muted">{total.toLocaleString()} athletes</p>
+        </div>
       </div>
 
       <form action="/admin/athletes" className="mb-6">
@@ -75,10 +105,10 @@ export default async function AdminAthletesPage({
           <thead>
             <tr className="tracked-caps border-b border-white/10 text-muted">
               <th className="py-2 pr-4 font-black">SA No</th>
-              <th className="py-2 pr-4 font-black">Name</th>
+              <th className="py-2 pr-4 font-black">{sortHeader("surname", "Name")}</th>
               <th className="py-2 pr-4 font-black">Email</th>
-              <th className="py-2 pr-4 font-black">Province</th>
-              <th className="py-2 pr-4 font-black">School / Club</th>
+              <th className="py-2 pr-4 font-black">{sortHeader("province", "Province")}</th>
+              <th className="py-2 pr-4 font-black">{sortHeader("school", "School / Club")}</th>
               <th className="py-2 font-black">Membership</th>
             </tr>
           </thead>

@@ -23,6 +23,7 @@ export function ScoreEntryForm({
   });
   const [matches, setMatches] = useState<AthleteSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [confirmedName, setConfirmedName] = useState<string | null>(null);
   const athleteInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,6 +41,7 @@ export function ScoreEntryForm({
 
   function handleQueryChange(value: string) {
     setShowSuggestions(true);
+    setConfirmedName(null);
 
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     if (!value.trim()) {
@@ -50,7 +52,15 @@ export function ScoreEntryForm({
     const token = ++searchToken.current;
     searchTimeout.current = setTimeout(async () => {
       const results = await searchAthletes(value);
-      if (searchToken.current === token) setMatches(results);
+      if (searchToken.current !== token) return;
+      setMatches(results);
+      // Whether typed directly (e.g. reading off a result sheet) or picked
+      // from the dropdown, an exact number match confirms whose time this
+      // is before the admin captures it.
+      const exact = results.find(
+        (a) => a.athleteNumber.toLowerCase() === value.trim().toLowerCase(),
+      );
+      setConfirmedName(exact?.name ?? null);
     }, SEARCH_DEBOUNCE_MS);
   }
 
@@ -58,7 +68,10 @@ export function ScoreEntryForm({
     <form
       ref={formRef}
       action={formAction}
-      onReset={() => setMatches([])}
+      onReset={() => {
+        setMatches([]);
+        setConfirmedName(null);
+      }}
       className="space-y-4"
     >
       <div className="relative">
@@ -87,6 +100,7 @@ export function ScoreEntryForm({
                       athleteInputRef.current.value = athlete.athleteNumber;
                     }
                     setShowSuggestions(false);
+                    setConfirmedName(athlete.name);
                   }}
                   className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm text-white hover:bg-sage/60"
                 >
@@ -97,10 +111,13 @@ export function ScoreEntryForm({
             ))}
           </ul>
         )}
+        {confirmedName && (
+          <p className="mt-1 text-sm font-bold text-gold">✓ {confirmedName}</p>
+        )}
       </div>
       <div>
-        <label className="mb-1 block text-sm text-white">Time (mm:ss)</label>
-        <input name="time" placeholder="0:54" autoComplete="off" className={inputClass} />
+        <label className="mb-1 block text-sm text-white">Time (mm:ss.ss)</label>
+        <input name="time" placeholder="0:54.20" autoComplete="off" className={inputClass} />
       </div>
       <div className="flex gap-6 text-sm text-white">
         <label className="flex items-center gap-2">

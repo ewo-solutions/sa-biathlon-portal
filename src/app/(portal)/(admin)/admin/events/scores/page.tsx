@@ -4,13 +4,7 @@ import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { ScoreEntryForm } from "@/components/ui/score-entry-form";
 import { recordTime, searchAthletes, toggleDns } from "./actions";
-
-function formatSeconds(seconds: number | null) {
-  if (seconds === null) return "—";
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return m > 0 ? `${m}:${s.toString().padStart(2, "0")}` : `${s}`;
-}
+import { formatSeconds } from "@/lib/time-format";
 
 export default async function AdminScoreEntryPage({
   searchParams,

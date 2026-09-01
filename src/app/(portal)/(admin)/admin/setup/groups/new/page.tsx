@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { saveGroup } from "../actions";
+import { formatSeconds } from "@/lib/time-format";
 
 const inputClass = "w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none";
 const labelClass = "mb-1 block text-sm text-white";
@@ -71,6 +72,7 @@ export default async function EditCreateGroupPage({
             Disability group
           </label>
 
+          <p className="tracked-caps pt-2 text-xs font-black text-gold">Running</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass}>Running distance (m)</label>
@@ -78,6 +80,33 @@ export default async function EditCreateGroupPage({
                 type="number"
                 name="runningDistanceMeters"
                 defaultValue={group?.runningDistanceMeters ?? ""}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Goal time (mm:ss)</label>
+              <input
+                name="runningGoalTime"
+                placeholder="5:28"
+                defaultValue={
+                  group?.runningGoalTimeSeconds != null
+                    ? formatSeconds(group.runningGoalTimeSeconds)
+                    : ""
+                }
+                className={inputClass}
+              />
+              <p className="mt-1 text-xs text-muted">The time worth &ldquo;Base points&rdquo; below.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelClass}>Base points (at goal time)</label>
+              <input
+                type="number"
+                step="0.01"
+                name="runningPoints"
+                placeholder="1000"
+                defaultValue={group?.runningPoints?.toString() ?? ""}
                 className={inputClass}
               />
             </div>
@@ -93,6 +122,7 @@ export default async function EditCreateGroupPage({
             </div>
           </div>
 
+          <p className="tracked-caps pt-2 text-xs font-black text-gold">Swimming</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass}>Swimming distance (m)</label>
@@ -100,6 +130,33 @@ export default async function EditCreateGroupPage({
                 type="number"
                 name="swimmingDistanceMeters"
                 defaultValue={group?.swimmingDistanceMeters ?? ""}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Goal time (mm:ss)</label>
+              <input
+                name="swimmingGoalTime"
+                placeholder="1:22"
+                defaultValue={
+                  group?.swimmingGoalTimeSeconds != null
+                    ? formatSeconds(group.swimmingGoalTimeSeconds)
+                    : ""
+                }
+                className={inputClass}
+              />
+              <p className="mt-1 text-xs text-muted">The time worth &ldquo;Base points&rdquo; below.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelClass}>Base points (at goal time)</label>
+              <input
+                type="number"
+                step="0.01"
+                name="swimmingPoints"
+                placeholder="1000"
+                defaultValue={group?.swimmingPoints?.toString() ?? ""}
                 className={inputClass}
               />
             </div>
@@ -114,9 +171,34 @@ export default async function EditCreateGroupPage({
               />
             </div>
           </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelClass}>25m pool penalty</label>
+              <input
+                type="number"
+                step="0.01"
+                name="swimmingPenalty25"
+                defaultValue={group?.swimmingPenalty25?.toString() ?? ""}
+                className={inputClass}
+              />
+              <p className="mt-1 text-xs text-muted">Deducted once when the competition&rsquo;s pool is 25m.</p>
+            </div>
+            <div>
+              <label className={labelClass}>50m pool penalty</label>
+              <input
+                type="number"
+                step="0.01"
+                name="swimmingPenalty50"
+                defaultValue={group?.swimmingPenalty50?.toString() ?? ""}
+                className={inputClass}
+              />
+              <p className="mt-1 text-xs text-muted">Deducted once otherwise (usually 0).</p>
+            </div>
+          </div>
 
+          <p className="tracked-caps pt-2 text-xs font-black text-gold">Bonus</p>
           <div>
-            <label className={labelClass}>Bonus points</label>
+            <label className={labelClass}>Bonus points (per year over Age start)</label>
             <input
               type="number"
               step="0.01"
@@ -124,6 +206,9 @@ export default async function EditCreateGroupPage({
               defaultValue={group?.bonusPoints?.toString() ?? ""}
               className={inputClass}
             />
+            <p className="mt-1 text-xs text-muted">
+              Split evenly between running and swimming for athletes at or above Age start.
+            </p>
           </div>
 
           <button

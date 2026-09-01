@@ -3,10 +3,12 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Crest } from "@/components/crest";
+import { CitizenshipFields } from "@/components/ui/citizenship-fields";
 import { registerAthlete } from "./actions";
 
 const inputClass = "w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none";
 const labelClass = "mb-1 block text-sm text-white";
+const required = <span className="text-red-400">*</span>;
 
 const errorMessages: Record<string, string> = {
   missing: "Please fill in all required fields.",
@@ -37,8 +39,11 @@ export default async function RegisterPage({
         <div className="mb-6 flex justify-center">
           <Crest className="h-20 w-20" />
         </div>
-        <p className="tracked-caps mb-6 text-center text-sm font-black text-muted">
+        <p className="tracked-caps mb-2 text-center text-sm font-black text-muted">
           Register as an athlete
+        </p>
+        <p className="mb-6 text-center text-xs text-white/50">
+          Fields marked <span className="text-red-400">*</span> are required.
         </p>
 
         {params.error && (
@@ -50,23 +55,23 @@ export default async function RegisterPage({
         <form action={registerAthlete} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className={labelClass}>Name</label>
+              <label className={labelClass}>Name {required}</label>
               <input name="name" required className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Surname</label>
+              <label className={labelClass}>Surname {required}</label>
               <input name="surname" required className={inputClass} />
             </div>
           </div>
 
           <div>
-            <label className={labelClass}>Email</label>
+            <label className={labelClass}>Email {required}</label>
             <input name="email" type="email" required className={inputClass} />
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className={labelClass}>Password</label>
+              <label className={labelClass}>Password {required}</label>
               <input name="password" type="password" required minLength={8} className={inputClass} />
             </div>
             <div>
@@ -75,26 +80,11 @@ export default async function RegisterPage({
             </div>
           </div>
 
-          <div>
-            <label className={labelClass}>SA ID number</label>
-            <input
-              name="idNumber"
-              required
-              inputMode="numeric"
-              pattern="\d{13}"
-              maxLength={13}
-              placeholder="13 digits, no spaces"
-              className={inputClass}
-            />
-            <p className="mt-1 text-xs text-white/60">
-              Your date of birth and gender are read directly from your ID number — if you already
-              have an SA Biathlon athlete number, this links your account to it automatically.
-            </p>
-          </div>
+          <CitizenshipFields />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className={labelClass}>Province</label>
+              <label className={labelClass}>Province {required}</label>
               <select name="provinceId" required className={inputClass}>
                 <option value="">Select…</option>
                 {provinces.map((province) => (
@@ -114,6 +104,18 @@ export default async function RegisterPage({
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Address</label>
+            <div className="space-y-2">
+              <input name="addressLine1" placeholder="Address line 1" className={inputClass} />
+              <input name="addressLine2" placeholder="Address line 2" className={inputClass} />
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <input name="addressLine3" placeholder="Town / City" className={inputClass} />
+                <input name="postalCode" placeholder="Postal code" className={inputClass} />
+              </div>
             </div>
           </div>
 

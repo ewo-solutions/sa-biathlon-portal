@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { EventThumbList } from "@/components/ui/event-thumb-list";
 import { ProfilePictureForm } from "@/components/ui/profile-picture-form";
+import { ConfirmOnChangeForm } from "@/components/ui/confirm-on-change-form";
+import { CitizenshipFields } from "@/components/ui/citizenship-fields";
+import { getCurrentAgeGroup } from "@/lib/current-age-group";
 import { updateAthlete, uploadAthletePicture } from "./actions";
 
 const inputClass = "w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none";
@@ -40,6 +43,12 @@ export default async function AdminAthleteDetailPage({
   const upcoming = registrations.filter((r) => r.event.eventDate >= now);
   const past = registrations.filter((r) => r.event.eventDate < now);
 
+  const currentAgeGroup = await getCurrentAgeGroup(prisma, {
+    dateOfBirth: athlete.athleteProfile?.dateOfBirth ?? null,
+    gender: athlete.athleteProfile?.gender ?? null,
+    disability: athlete.athleteProfile?.disability ?? false,
+  });
+
   const boundUpdate = updateAthlete.bind(null, id);
   const boundUpload = uploadAthletePicture.bind(null, id);
 
@@ -75,7 +84,13 @@ export default async function AdminAthleteDetailPage({
 
         <div className="space-y-6">
           <Card title="Personal information">
-            <form action={boundUpdate} className="space-y-4">
+            <ConfirmOnChangeForm
+              action={boundUpdate}
+              className="space-y-4"
+              watchField="idNumber"
+              originalValue={athlete.athleteProfile?.idNumber ?? ""}
+              confirmMessage="Are you sure you want to change this athlete's ID number? Their date of birth and gender will be recalculated from the new number."
+            >
               <div>
                 <label className={labelClass}>Athlete number (SA No)</label>
                 <input
@@ -126,49 +141,17 @@ export default async function AdminAthleteDetailPage({
                   className={inputClass}
                 />
               </div>
-              <div>
-                <label className={labelClass}>SA ID number</label>
-                <input
-                  name="idNumber"
-                  defaultValue={athlete.athleteProfile?.idNumber ?? ""}
-                  inputMode="numeric"
-                  maxLength={13}
-                  placeholder="13 digits — drives DOB/gender below"
-                  className={inputClass}
-                />
-                <p className="mt-1 text-xs text-muted">
-                  When this is a valid 13-digit SA ID, date of birth and gender are derived from it
-                  automatically and the fields below are ignored. Leave blank and fill those in
-                  manually for athletes without an SA ID.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelClass}>Date of birth</label>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    defaultValue={
-                      athlete.athleteProfile?.dateOfBirth
-                        ? athlete.athleteProfile.dateOfBirth.toISOString().slice(0, 10)
-                        : ""
-                    }
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className={labelClass}>Gender</label>
-                  <select
-                    name="gender"
-                    defaultValue={athlete.athleteProfile?.gender ?? ""}
-                    className={inputClass}
-                  >
-                    <option value="">Not set</option>
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                  </select>
-                </div>
-              </div>
+              <CitizenshipFields
+                defaultIsSaCitizen={athlete.athleteProfile?.isSaCitizen ?? true}
+                defaultIdNumber={athlete.athleteProfile?.idNumber ?? ""}
+                defaultDateOfBirth={
+                  athlete.athleteProfile?.dateOfBirth
+                    ? athlete.athleteProfile.dateOfBirth.toISOString().slice(0, 10)
+                    : ""
+                }
+                defaultGender={athlete.athleteProfile?.gender ?? ""}
+                idRequired={false}
+              />
               <label className="flex items-center gap-2 text-sm text-white">
                 <input
                   type="checkbox"
@@ -180,6 +163,10 @@ export default async function AdminAthleteDetailPage({
               <p className="text-xs text-muted">
                 Group: {athlete.athleteProfile?.group?.name ?? "—"} (auto-assigned from date of
                 birth, gender and disability on save)
+                <br />
+                {currentAgeGroup.season
+                  ? `Current Season ${currentAgeGroup.season.label} Age Group: ${currentAgeGroup.group?.name ?? "Not yet assigned"}`
+                  : "Age group not available — no active season configured."}
               </p>
               <div>
                 <label className={labelClass}>Province</label>
@@ -211,13 +198,44 @@ export default async function AdminAthleteDetailPage({
                   ))}
                 </select>
               </div>
+              <div>
+                <label className={labelClass}>Address</label>
+                <div className="space-y-2">
+                  <input
+                    name="addressLine1"
+                    placeholder="Address line 1"
+                    defaultValue={athlete.athleteProfile?.addressLine1 ?? ""}
+                    className={inputClass}
+                  />
+                  <input
+                    name="addressLine2"
+                    placeholder="Address line 2"
+                    defaultValue={athlete.athleteProfile?.addressLine2 ?? ""}
+                    className={inputClass}
+                  />
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <input
+                      name="addressLine3"
+                      placeholder="Town / City"
+                      defaultValue={athlete.athleteProfile?.addressLine3 ?? ""}
+                      className={inputClass}
+                    />
+                    <input
+                      name="postalCode"
+                      placeholder="Postal code"
+                      defaultValue={athlete.athleteProfile?.postalCode ?? ""}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              </div>
               <button
                 type="submit"
                 className="tracked-caps bg-sage px-6 py-3 text-sm font-black text-white transition hover:bg-sage-light"
               >
                 Save changes
               </button>
-            </form>
+            </ConfirmOnChangeForm>
           </Card>
 
           <Card title="Membership information">
