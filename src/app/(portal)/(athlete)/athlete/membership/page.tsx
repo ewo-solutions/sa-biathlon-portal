@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
-import { cancelMembership, renewMembership } from "./actions";
+import { renewMembership } from "./actions";
 
 export default async function AthleteMembershipPage() {
   const session = await auth();
@@ -12,19 +12,30 @@ export default async function AthleteMembershipPage() {
     orderBy: { expiresAt: "desc" },
   });
 
+  const isCurrentlyAffiliated =
+    membership?.status === "ACTIVE" && membership.expiresAt >= new Date();
+
   return (
     <div>
-      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">Membership</h1>
-      <Card title="Current membership">
+      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">Athlete Affiliation</h1>
+      <Card title="Current affiliation">
+        {!isCurrentlyAffiliated && (
+          <p className="tracked-caps mb-4 bg-red-900/40 px-4 py-3 text-sm font-black text-red-200">
+            Affiliation Fees Outstanding
+          </p>
+        )}
         {membership ? (
           <div className="space-y-4 text-sm">
             <div>
-              <p className="text-white/80">Current Membership:</p>
+              <p className="text-white/80">Season:</p>
               <p className="tracked-caps font-black text-gold">{membership.seasonLabel}</p>
             </div>
             <div>
-              <p className="text-white/80">Yearly Membership:</p>
-              <p className="tracked-caps font-black text-gold">R{membership.feeAmount.toString()}/y</p>
+              <p className="text-white/80">Affiliation fee:</p>
+              <p className="tracked-caps font-black text-gold">
+                R{membership.feeAmount.toString()}
+                {membership.sponsoredOverride ? " (sponsored — no payment required)" : "/y"}
+              </p>
             </div>
             <div className="flex flex-wrap gap-6 sm:gap-8">
               <div>
@@ -49,21 +60,6 @@ export default async function AthleteMembershipPage() {
               </div>
             </div>
             <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:gap-4">
-              {membership.status !== "CANCELLED" && (
-                <form
-                  action={async () => {
-                    "use server";
-                    await cancelMembership(membership.id);
-                  }}
-                >
-                  <button
-                    type="submit"
-                    className="tracked-caps w-full bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light sm:w-auto"
-                  >
-                    Cancel membership
-                  </button>
-                </form>
-              )}
               <form
                 action={async () => {
                   "use server";
@@ -74,13 +70,15 @@ export default async function AthleteMembershipPage() {
                   type="submit"
                   className="tracked-caps w-full bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light sm:w-auto"
                 >
-                  Renew membership
+                  Pay / renew affiliation
                 </button>
               </form>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted">No membership on file yet.</p>
+          <p className="text-sm text-muted">
+            No affiliation on file yet — Affiliation Fees Outstanding.
+          </p>
         )}
       </Card>
     </div>

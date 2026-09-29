@@ -104,6 +104,40 @@ export async function updateAthlete(athleteId: string, formData: FormData) {
   revalidatePath(`/admin/athletes/${athleteId}`);
 }
 
+// Lets an admin mark a province-sponsored PDI athlete as affiliated for the
+// current season without requiring an actual payment — the "activate
+// affiliation" case the client called out explicitly.
+export async function activateSponsoredAffiliation(athleteId: string) {
+  await requireAdmin();
+
+  const [profile, season] = await Promise.all([
+    prisma.athleteProfile.findUnique({ where: { userId: athleteId } }),
+    prisma.season.findFirst({
+      where: { startDate: { lte: new Date() }, endDate: { gte: new Date() } },
+      orderBy: { endDate: "desc" },
+    }),
+  ]);
+
+  const seasonLabel = season?.label ?? new Date().getFullYear().toString();
+  const expiresAt = season?.endDate ?? new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+
+  await prisma.membership.create({
+    data: {
+      userId: athleteId,
+      seasonLabel,
+      feeAmount: 0,
+      status: "ACTIVE",
+      purchasedAt: new Date(),
+      expiresAt,
+      provinceId: profile?.provinceId ?? null,
+      seasonId: season?.id ?? null,
+      sponsoredOverride: true,
+    },
+  });
+
+  revalidatePath(`/admin/athletes/${athleteId}`);
+}
+
 export async function uploadAthletePicture(athleteId: string, formData: FormData) {
   await requireAdmin();
 

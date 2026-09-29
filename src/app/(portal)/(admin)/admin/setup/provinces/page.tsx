@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
-import { saveProvince, deleteProvince, recalculateProvinceGroups, resetProvinceFees } from "./actions";
+import { saveProvince, deleteProvince } from "./actions";
 
 const inputClass = "w-full bg-sage px-4 py-3 text-sm text-white placeholder-white/70 outline-none";
 const labelClass = "mb-1 block text-sm text-white";
@@ -20,7 +20,14 @@ export default async function AdminProvincesPage({
 
   return (
     <div>
-      <h1 className="tracked-caps mb-6 text-2xl font-black text-white">Provinces</h1>
+      <h1 className="tracked-caps mb-2 text-2xl font-black text-white">Provinces</h1>
+      <p className="mb-6 text-sm text-muted">
+        Age recalculation and affiliation fee resets are global, automated actions now — see{" "}
+        <Link href="/admin/setup/seasons" className="text-gold hover:underline">
+          Seasons
+        </Link>
+        .
+      </p>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.7fr]">
         <Card title={editing ? "Edit province" : "Add province"}>
@@ -76,18 +83,6 @@ export default async function AdminProvincesPage({
                 />
               </div>
             </div>
-            <div>
-              <label className={labelClass}>Age date</label>
-              <p className="mb-1 text-xs text-muted">
-                Athlete ages/groups are calculated as of this date each season.
-              </p>
-              <input
-                type="date"
-                name="ageDate"
-                defaultValue={editing?.ageDate ? editing.ageDate.toISOString().slice(0, 10) : ""}
-                className={inputClass}
-              />
-            </div>
             <div className="flex gap-3">
               <button
                 type="submit"
@@ -141,26 +136,6 @@ export default async function AdminProvincesPage({
                       >
                         Edit
                       </Link>
-                      <form
-                        action={async () => {
-                          "use server";
-                          await recalculateProvinceGroups(province.id);
-                        }}
-                      >
-                        <button type="submit" className="text-white/80 hover:underline">
-                          Recalculate ages
-                        </button>
-                      </form>
-                      <form
-                        action={async () => {
-                          "use server";
-                          await resetProvinceFees(province.id);
-                        }}
-                      >
-                        <button type="submit" className="text-white/80 hover:underline">
-                          Reset SA Fees
-                        </button>
-                      </form>
                       <form
                         action={async () => {
                           "use server";

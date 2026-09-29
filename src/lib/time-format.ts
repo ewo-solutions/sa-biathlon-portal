@@ -22,6 +22,22 @@ export function parseTimeToSeconds(input: string): number | null {
   return Math.round(seconds * 100) / 100;
 }
 
+// Auto-formats raw numeric keystrokes into "mm:ss.ss" as the admin types,
+// so a hand-timer reading off a stopwatch only ever types digits (e.g.
+// "021768") and the colon/period appear automatically — matching how the
+// legacy manual capture screens behaved. Strips anything non-numeric and
+// caps at 6 digits (mm + ss + hundredths).
+export function maskTimeDigits(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 6);
+  if (digits.length <= 2) return digits;
+  const minutes = digits.slice(0, 2);
+  const rest = digits.slice(2);
+  if (rest.length <= 2) return `${minutes}:${rest}`;
+  const seconds = rest.slice(0, 2);
+  const hundredths = rest.slice(2);
+  return `${minutes}:${seconds}.${hundredths}`;
+}
+
 // Formats seconds (whole or with hundredths) as "m:ss.ss" (or "ss.ss" under
 // a minute). Accepts a Prisma Decimal, a plain number, or null.
 export function formatSeconds(seconds: { toString(): string } | number | null): string {

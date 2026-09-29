@@ -17,17 +17,21 @@ export default async function AdminStatisticsPage() {
       }),
       prisma.membership.groupBy({ by: ["status"], _count: { _all: true } }),
       prisma.event.count(),
+      // Athletes signed up for an event this year — entries a registrant
+      // later withdrew from (status CANCELLED) don't count.
       prisma.eventRegistration.count({
-        where: { createdAt: { gte: yearStart, lt: yearEnd } },
+        where: { createdAt: { gte: yearStart, lt: yearEnd }, status: { not: "CANCELLED" } },
       }),
       prisma.eventRegistration
         .findMany({
-          where: { createdAt: { gte: yearStart, lt: yearEnd } },
+          where: { createdAt: { gte: yearStart, lt: yearEnd }, status: { not: "CANCELLED" } },
           distinct: ["userId"],
           select: { userId: true },
         })
         .then((rows) => rows.length),
-      prisma.membership.count({ where: { status: "ACTIVE" } }),
+      // "Affiliated" means a currently-active, not-yet-expired membership —
+      // matches the season-based affiliation status shown on athlete profiles.
+      prisma.membership.count({ where: { status: "ACTIVE", expiresAt: { gte: new Date() } } }),
     ]);
 
   const chartData = events.map((event) => ({
@@ -36,10 +40,26 @@ export default async function AdminStatisticsPage() {
   }));
 
   const stats = [
-    { label: `Total Participants in ${currentYear}`, value: participantsThisYear },
-    { label: `Total Sign Ups in ${currentYear}`, value: signUpsThisYear },
-    { label: "Total Events", value: totalEvents },
-    { label: "Total Affiliations", value: totalAffiliations },
+    {
+      label: `Athletes Who Entered an Event in ${currentYear}`,
+      value: participantsThisYear,
+      hint: "Distinct athletes with at least one active (non-withdrawn) event entry this calendar year.",
+    },
+    {
+      label: `Event Sign-Ups in ${currentYear}`,
+      value: signUpsThisYear,
+      hint: "Total event entries submitted this calendar year, across all events (excludes withdrawn entries).",
+    },
+    {
+      label: "Total Events (All-Time)",
+      value: totalEvents,
+      hint: "All competitions ever created on the system, past and upcoming.",
+    },
+    {
+      label: "Currently Affiliated Athletes",
+      value: totalAffiliations,
+      hint: "Athletes with a paid (or sponsored) affiliation for the current season that hasn't expired yet.",
+    },
   ];
 
   return (
@@ -55,6 +75,7 @@ export default async function AdminStatisticsPage() {
             <span>
               <p className="text-3xl font-bold text-gold">{stat.value}</p>
               <p className="text-sm text-white">{stat.label}</p>
+              <p className="mt-1 text-xs text-muted">{stat.hint}</p>
             </span>
           </Card>
         ))}

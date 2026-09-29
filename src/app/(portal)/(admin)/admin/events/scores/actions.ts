@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import type { HeatDiscipline } from "@prisma/client";
 import { calculateBonusPoints, calculateRunningPoints, calculateSwimmingPoints } from "@/lib/scoring";
 import { parseTimeToSeconds } from "@/lib/time-format";
+import { recalculateSeasonBests } from "@/lib/personal-best";
 
 export type ScoreEntryState = {
   status: "idle" | "success" | "error";
@@ -137,13 +138,17 @@ export async function recordTime(
     },
   });
 
+  if (event.seasonId && athleteProfile.id) {
+    await recalculateSeasonBests(prisma, athleteProfile.id, event.seasonId);
+  }
+
   revalidatePath("/admin/events/scores");
   revalidatePath("/admin/events/report");
 
   const pointsNote = group
     ? points === null
       ? " (group scoring not fully configured — no points calculated)"
-      : ` — ${points.toFixed(1)} points`
+      : ` — ${points.toFixed(2)} points`
     : " (no group assigned — no points calculated)";
 
   return {
