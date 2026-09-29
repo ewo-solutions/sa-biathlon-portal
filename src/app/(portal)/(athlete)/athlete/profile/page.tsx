@@ -5,6 +5,7 @@ import { EventThumbList } from "@/components/ui/event-thumb-list";
 import { ProfilePictureForm } from "@/components/ui/profile-picture-form";
 import { ConfirmOnChangeForm } from "@/components/ui/confirm-on-change-form";
 import { CitizenshipFields } from "@/components/ui/citizenship-fields";
+import { SeasonSelect } from "@/components/ui/season-select";
 import { getCurrentAgeGroup } from "@/lib/current-age-group";
 import { updateProfile, uploadProfilePicture } from "./actions";
 
@@ -14,11 +15,16 @@ const readOnlyClass =
 const labelClass = "mb-1 block text-sm text-white";
 const required = <span className="text-red-400">*</span>;
 
-export default async function AthleteProfilePage() {
+export default async function AthleteProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ season?: string }>;
+}) {
   const session = await auth();
   const userId = session!.user.id;
+  const { season: seasonFilter } = await searchParams;
 
-  const [user, membership, registrations, schools] = await Promise.all([
+  const [user, membership, registrations, schools, seasons] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       include: { athleteProfile: { include: { province: true, school: true } } },
@@ -28,12 +34,12 @@ export default async function AthleteProfilePage() {
       orderBy: { expiresAt: "desc" },
     }),
     prisma.eventRegistration.findMany({
-      where: { userId },
-      include: { event: true },
+      where: { userId, status: { not: "CANCELLED" } },
+      include: { event: { include: { season: true } }, group: true },
       orderBy: { event: { eventDate: "desc" } },
-      take: 6,
     }),
     prisma.school.findMany({ orderBy: { name: "asc" } }),
+    prisma.season.findMany({ orderBy: { startDate: "desc" } }),
   ]);
 
   const profile = user.athleteProfile;
@@ -47,7 +53,9 @@ export default async function AthleteProfilePage() {
 
   const now = new Date();
   const upcoming = registrations.filter((r) => r.event.eventDate >= now);
-  const past = registrations.filter((r) => r.event.eventDate < now);
+  const past = registrations
+    .filter((r) => r.event.eventDate < now)
+    .filter((r) => !seasonFilter || r.event.seasonId === seasonFilter);
 
   return (
     <div>
@@ -72,8 +80,37 @@ export default async function AthleteProfilePage() {
             />
           </Card>
 
-          <Card title="Past events">
-            <EventThumbList events={past.map((r) => r.event)} emptyLabel="No past events yet." />
+          <Card
+            title="Past events"
+            headerExtra={seasons.length > 0 ? <SeasonSelect seasons={seasons} /> : undefined}
+          >
+            {past.length === 0 && <p className="text-sm text-muted">No past events yet.</p>}
+            <ul className="space-y-3 text-sm">
+              {past.map((r) => {
+                const eitherDnf = r.runningDnf || r.swimmingDnf;
+                const total =
+                  Number(r.runningPoints ?? 0) +
+                  Number(r.runningBonusPoints ?? 0) +
+                  Number(r.swimmingPoints ?? 0) +
+                  Number(r.swimmingBonusPoints ?? 0);
+                return (
+                  <li key={r.id} className="border-b border-white/10 pb-2 last:border-0">
+                    <p className="font-bold text-white">{r.event.name}</p>
+                    <p className="text-xs text-muted">
+                      {r.event.eventDate.toLocaleDateString("en-ZA", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                      {" — "}
+                      {r.group?.name ?? "Age group not yet assigned"}
+                      {" — "}
+                      {r.dns ? "DNS" : eitherDnf ? "DNF" : `${total.toFixed(2)} pts`}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
           </Card>
         </div>
 
@@ -222,17 +259,23 @@ export default async function AthleteProfilePage() {
             </ConfirmOnChangeForm>
           </Card>
 
-          <Card title="Membership information">
+          <Card title="Athlete Affiliation">
+            {!membership && (
+              <p className="tracked-caps mb-4 bg-red-900/40 px-4 py-3 text-sm font-black text-red-200">
+                Affiliation Fees Outstanding
+              </p>
+            )}
             {membership ? (
               <div className="space-y-4 text-sm">
                 <div>
-                  <p className="text-white/80">Current Membership:</p>
+                  <p className="text-white/80">Season:</p>
                   <p className="tracked-caps font-black text-gold">{membership.seasonLabel}</p>
                 </div>
                 <div>
-                  <p className="text-white/80">Yearly Membership:</p>
+                  <p className="text-white/80">Affiliation fee:</p>
                   <p className="tracked-caps font-black text-gold">
-                    R{membership.feeAmount.toString()}/y
+                    R{membership.feeAmount.toString()}
+                    {membership.sponsoredOverride ? " (sponsored)" : "/y"}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-6 sm:gap-8">
@@ -261,11 +304,16 @@ export default async function AthleteProfilePage() {
                   href="/athlete/membership"
                   className="tracked-caps inline-block bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
                 >
-                  Manage membership
+                  Manage affiliation
                 </a>
               </div>
             ) : (
-              <p className="text-sm text-muted">No active membership on file.</p>
+              <a
+                href="/athlete/membership"
+                className="tracked-caps inline-block bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
+              >
+                Pay affiliation
+              </a>
             )}
           </Card>
         </div>

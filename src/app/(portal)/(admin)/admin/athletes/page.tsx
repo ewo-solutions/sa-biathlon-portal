@@ -80,6 +80,12 @@ export default async function AdminAthletesPage({
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 className="tracked-caps text-2xl font-black text-white">Athletes Profiles</h1>
         <div className="flex items-center gap-4">
+          <Link
+            href="/admin/athletes/new"
+            className="tracked-caps bg-gold px-4 py-2 text-xs font-black text-panel-alt transition hover:bg-gold-light"
+          >
+            Register Athlete
+          </Link>
           <a
             href={`/admin/athletes/export?${new URLSearchParams({ ...(q ? { q } : {}), sort })}`}
             className="tracked-caps bg-panel-alt px-4 py-2 text-xs font-black text-white transition hover:bg-sage/60"

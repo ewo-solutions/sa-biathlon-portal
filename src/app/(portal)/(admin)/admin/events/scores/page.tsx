@@ -105,7 +105,7 @@ export default async function AdminScoreEntryPage({
                   <td className="py-3 pr-4 text-white/80">
                     {points === null || registration.dns
                       ? "—"
-                      : `${Number(points).toFixed(1)}${bonus ? ` +${Number(bonus).toFixed(1)}` : ""}`}
+                      : `${Number(points).toFixed(2)}${bonus ? ` +${Number(bonus).toFixed(2)}` : ""}`}
                   </td>
                   <td className="py-3">
                     <form

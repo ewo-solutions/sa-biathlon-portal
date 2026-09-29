@@ -443,6 +443,9 @@ model Membership {
   processedBy      String?
   paidViaGateway   Boolean          @default(false)
   nationalFeesPaid Boolean          @default(false)
+  // Admin-activated affiliation for a province-sponsored PDI athlete — the
+  // athlete counts as affiliated for the season without having paid.
+  sponsoredOverride Boolean         @default(false)
   createdAt        DateTime         @default(now())
 
   payment Payment?

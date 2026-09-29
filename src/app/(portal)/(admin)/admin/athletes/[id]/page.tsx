@@ -6,17 +6,20 @@ import { ProfilePictureForm } from "@/components/ui/profile-picture-form";
 import { ConfirmOnChangeForm } from "@/components/ui/confirm-on-change-form";
 import { CitizenshipFields } from "@/components/ui/citizenship-fields";
 import { getCurrentAgeGroup } from "@/lib/current-age-group";
-import { updateAthlete, uploadAthletePicture } from "./actions";
+import { updateAthlete, uploadAthletePicture, activateSponsoredAffiliation } from "./actions";
 
 const inputClass = "w-full bg-sage px-4 py-3.5 text-sm text-white placeholder-white/70 outline-none";
 const labelClass = "mb-1 block text-sm text-white";
 
 export default async function AdminAthleteDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ created?: string; tempPassword?: string }>;
 }) {
   const { id } = await params;
+  const { created, tempPassword } = await searchParams;
 
   const athlete = await prisma.user.findUnique({
     where: { id, role: "ATHLETE" },
@@ -40,7 +43,6 @@ export default async function AdminAthleteDetailPage({
   ]);
 
   const now = new Date();
-  const upcoming = registrations.filter((r) => r.event.eventDate >= now);
   const past = registrations.filter((r) => r.event.eventDate < now);
 
   const currentAgeGroup = await getCurrentAgeGroup(prisma, {
@@ -54,6 +56,12 @@ export default async function AdminAthleteDetailPage({
 
   return (
     <div>
+      {created && tempPassword && (
+        <p className="mb-6 bg-gold px-4 py-3 text-sm font-bold text-panel-alt">
+          Account created. Temporary password: <span className="font-mono">{tempPassword}</span>{" "}
+          — pass this on to the athlete so they can log in and set their own password.
+        </p>
+      )}
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <h1 className="tracked-caps text-2xl font-black text-white">
           {athlete.name} {athlete.surname}
@@ -68,13 +76,6 @@ export default async function AdminAthleteDetailPage({
         <div className="space-y-6">
           <Card title="Profile Picture">
             <ProfilePictureForm action={boundUpload} currentImageUrl={athlete.profileImageUrl} />
-          </Card>
-
-          <Card title="Upcoming events">
-            <EventThumbList
-              events={upcoming.map((r) => r.event)}
-              emptyLabel="No upcoming sign-ups."
-            />
           </Card>
 
           <Card title="Past events">
@@ -161,12 +162,11 @@ export default async function AdminAthleteDetailPage({
                 Disability
               </label>
               <p className="text-xs text-muted">
-                Group: {athlete.athleteProfile?.group?.name ?? "—"} (auto-assigned from date of
-                birth, gender and disability on save)
-                <br />
                 {currentAgeGroup.season
-                  ? `Current Season ${currentAgeGroup.season.label} Age Group: ${currentAgeGroup.group?.name ?? "Not yet assigned"}`
+                  ? `Age Group (${currentAgeGroup.season.label} season): ${currentAgeGroup.group?.name ?? "Not yet assigned"}`
                   : "Age group not available — no active season configured."}
+                {" "}(auto-assigned from date of birth, gender and disability — recalculated for
+                the current season automatically)
               </p>
               <div>
                 <label className={labelClass}>Province</label>
@@ -238,17 +238,23 @@ export default async function AdminAthleteDetailPage({
             </ConfirmOnChangeForm>
           </Card>
 
-          <Card title="Membership information">
+          <Card title="Athlete Affiliation">
+            {!membership && (
+              <p className="tracked-caps mb-4 bg-red-900/40 px-4 py-3 text-sm font-black text-red-200">
+                Affiliation Fees Outstanding
+              </p>
+            )}
             {membership ? (
               <div className="space-y-4 text-sm">
                 <div>
-                  <p className="text-white/80">Current Membership:</p>
+                  <p className="text-white/80">Season:</p>
                   <p className="tracked-caps font-black text-gold">{membership.seasonLabel}</p>
                 </div>
                 <div>
-                  <p className="text-white/80">Yearly Membership:</p>
+                  <p className="text-white/80">Affiliation fee:</p>
                   <p className="tracked-caps font-black text-gold">
-                    R{membership.feeAmount.toString()}/y
+                    R{membership.feeAmount.toString()}
+                    {membership.sponsoredOverride ? " (sponsored — PDI)" : "/y"}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-6 sm:gap-8">
@@ -275,7 +281,23 @@ export default async function AdminAthleteDetailPage({
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted">No active membership on file.</p>
+              <form
+                action={async () => {
+                  "use server";
+                  await activateSponsoredAffiliation(id);
+                }}
+              >
+                <button
+                  type="submit"
+                  className="tracked-caps bg-gold px-6 py-3 text-sm font-black text-panel-alt transition hover:bg-gold-light"
+                >
+                  Activate affiliation (sponsored / PDI)
+                </button>
+                <p className="mt-2 text-xs text-muted">
+                  For athletes whose affiliation fees are sponsored by their province — marks
+                  them affiliated for the current season without requiring payment.
+                </p>
+              </form>
             )}
           </Card>
 

@@ -1,22 +1,33 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { AuthError } from "next-auth";
-import { signIn } from "@/lib/auth";
+import crypto from "crypto";
+import { auth } from "@/lib/auth";
 import { registerOrClaimAthlete } from "@/lib/athlete-registration";
 
-export async function registerAthlete(formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const isSaCitizen = formData.get("isSaCitizen") !== "false";
+async function requireAdmin() {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Not authorized");
+  }
+}
+
+// Lets an admin register an athlete who's having trouble self-registering —
+// same validation and legacy-profile-claiming logic as public sign-up, but
+// the admin sets things up on the athlete's behalf with a temporary
+// password instead of signing in as them.
+export async function adminRegisterAthlete(formData: FormData) {
+  await requireAdmin();
+
+  const tempPassword = crypto.randomBytes(6).toString("hex");
 
   const result = await registerOrClaimAthlete({
     name: formData.get("name") as string,
     surname: formData.get("surname") as string,
-    email,
-    password,
+    email: formData.get("email") as string,
+    password: tempPassword,
     cellphone: (formData.get("cellphone") as string) || null,
-    isSaCitizen,
+    isSaCitizen: formData.get("isSaCitizen") !== "false",
     idNumberInput: ((formData.get("idNumber") as string) || "").replace(/\s/g, "") || null,
     dateOfBirthInput: (formData.get("dateOfBirth") as string) || null,
     genderInput: (formData.get("gender") as string) || null,
@@ -30,15 +41,8 @@ export async function registerAthlete(formData: FormData) {
   });
 
   if ("error" in result) {
-    redirect(`/register?error=${result.error}`);
+    redirect(`/admin/athletes/new?error=${result.error}`);
   }
 
-  try {
-    await signIn("credentials", { email, password, redirectTo: "/athlete" });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      redirect("/login");
-    }
-    throw error;
-  }
+  redirect(`/admin/athletes/${result.userId}?created=1&tempPassword=${tempPassword}`);
 }

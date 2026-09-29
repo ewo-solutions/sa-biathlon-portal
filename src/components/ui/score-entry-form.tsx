@@ -6,6 +6,7 @@ import type {
   AthleteSearchResult,
   ScoreEntryState,
 } from "@/app/(portal)/(admin)/admin/events/scores/actions";
+import { maskTimeDigits } from "@/lib/time-format";
 
 const inputClass = "w-full bg-sage px-4 py-3 text-sm text-white placeholder-white/70 outline-none";
 const SEARCH_DEBOUNCE_MS = 200;
@@ -24,6 +25,7 @@ export function ScoreEntryForm({
   const [matches, setMatches] = useState<AthleteSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [confirmedName, setConfirmedName] = useState<string | null>(null);
+  const [timeValue, setTimeValue] = useState("");
   const athleteInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,6 +73,7 @@ export function ScoreEntryForm({
       onReset={() => {
         setMatches([]);
         setConfirmedName(null);
+        setTimeValue("");
       }}
       className="space-y-4"
     >
@@ -117,7 +120,18 @@ export function ScoreEntryForm({
       </div>
       <div>
         <label className="mb-1 block text-sm text-white">Time (mm:ss.ss)</label>
-        <input name="time" placeholder="0:54.20" autoComplete="off" className={inputClass} />
+        <input
+          name="time"
+          value={timeValue}
+          onChange={(e) => setTimeValue(maskTimeDigits(e.target.value))}
+          placeholder="00:54.20"
+          inputMode="numeric"
+          autoComplete="off"
+          className={inputClass}
+        />
+        <p className="mt-1 text-xs text-muted">
+          Type digits only — e.g. 021768 becomes 02:17.68
+        </p>
       </div>
       <div className="flex gap-6 text-sm text-white">
         <label className="flex items-center gap-2">
